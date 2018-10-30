@@ -10,6 +10,8 @@ Pod::Spec.new do |s|
   s.author       = { "weaken" => "845188093@qq.com" }
   s.source       = { :git => "https://github.com/weaken000/WKPhotoAlbum.git", :tag => "0.0.1" }
   s.source_files = "WKPhotoAlbum"
+  s.resources    = "WKPhotoAlbum/Resources/WKPhotoAlbum.bundle"
   s.frameworks   = "Photos"
   s.ios.deployment_target = '9.0'
+
 end
