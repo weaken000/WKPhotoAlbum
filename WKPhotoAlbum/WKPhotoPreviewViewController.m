@@ -126,9 +126,11 @@
         _videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:_videoPlayer];
         _videoPlayerLayer.zPosition = 0.5;
         [_previewImageView.layer addSublayer:_videoPlayerLayer];
+        [_videoPlayer addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
         
+        _isPlaying = NO;
         _videoControl = [[UIButton alloc] init];
-        [_videoControl setBackgroundColor:[UIColor redColor]];
+        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         _videoControl.layer.zPosition = 1;
         [_previewImageView addSubview:_videoControl];
         [_videoControl addTarget:self action:@selector(click_videoControl) forControlEvents:UIControlEventTouchUpInside];
@@ -214,13 +216,13 @@
     CGFloat delta = self.coverImage.size.width / self.previewImageView.frame.size.width;
     CGFloat cornerRadius = (itemW - 2 * margin) * 0.5;
 
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(cornerRadius * 2 * delta, cornerRadius * 2 * delta), NO, 0);
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(cornerRadius * 2 * delta, cornerRadius * 2 * delta), NO, self.coverImage.scale);
     CGContextRef context = UIGraphicsGetCurrentContext();
     UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, cornerRadius * 2 * delta, cornerRadius * 2 * delta) cornerRadius:cornerRadius * delta];
     CGContextAddPath(context, path.CGPath);
     CGContextClip(context);
     
-    CGRect rect = CGRectMake(- (self.clipMaskImageView.center.x - cornerRadius) * delta,
+    CGRect rect = CGRectMake(- (self.clipMaskImageView.center.x - self.previewImageView.frame.origin.x - cornerRadius) * delta,
                              - (self.clipMaskImageView.center.y - self.previewImageView.frame.origin.y - cornerRadius) * delta,
                              self.coverImage.size.width,
                              self.coverImage.size.height);
@@ -391,8 +393,10 @@
 - (void)click_videoControl {
     if (_isPlaying) {
         [_videoPlayer pause];
+        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     } else {
         [_videoPlayer play];
+        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
     }
     _isPlaying = !_isPlaying;
 }
@@ -412,19 +416,36 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillResignActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:_playerItem];
+    [_videoPlayer removeObserver:self forKeyPath:@"status"];
 }
 
 - (void)appDidEnterBackground {
     if (_isPlaying) {
-        [self click_videoControl];
+        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoPlayer pause];
     }
 }
 
-- (void)appDidEnterPlayGround {}
+- (void)appDidEnterPlayGround {
+    if (_isPlaying) {
+        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_videoPlayer play];
+    }
+}
 
 - (void)moviePlayDidEnd:(NSNotification *)notification {
     _isPlaying = NO;
+    [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     [_videoPlayer seekToTime:CMTimeMake(0, 1) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {}];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"status"]) {
+        AVPlayerStatus status = [change[NSKeyValueChangeNewKey] integerValue];
+        if (status == AVPlayerStatusReadyToPlay) {
+            [self click_videoControl];
+        }
+    }
 }
 
 #pragma mark - UIGestureRecognizerDelegate
