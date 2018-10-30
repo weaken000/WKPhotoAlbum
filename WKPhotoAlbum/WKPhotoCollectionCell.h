@@ -27,6 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, nullable) UIImage  *thumImage;
 
+@property (nonatomic, assign) NSInteger selectIndex;
+
 @property (nonatomic, weak  ) id<WKPhotoCollectionCellDelegate> delegate;
 
 @end

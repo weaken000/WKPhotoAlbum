@@ -63,7 +63,7 @@
             _jumpToSettingBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMaxY(_deniedTipImageView.frame) + 30);
             CGSize labelSize = [_deniedTipLabel sizeThatFits:CGSizeMake(self.frame.size.width - 60, CGFLOAT_MAX)];
             _deniedTipLabel.frame = CGRectMake((self.frame.size.width - labelSize.width) * 0.5, CGRectGetMinY(_deniedTipImageView.frame) - 20 - labelSize.height, labelSize.width, labelSize.height);
-        
+            
         }
         _jumpToSettingBtn.hidden = NO;
         _deniedTipLabel.hidden = NO;
@@ -127,7 +127,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
-
+    
     [self installNavi];
     [self setupFromVC];
     [self requestAuthorization];
@@ -165,12 +165,13 @@
 - (void)installNavi {
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
     UIButton *backButton = [[UIButton alloc] init];
-    backButton.frame = CGRectMake(0, 0, 50, 44);
-    backButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    [backButton setImage:[UIImage imageNamed:@"login_icon_back"] forState:UIControlStateNormal];
+    [backButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
+    UIView *backView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 44, 44)];
+    [backView addSubview:backButton];
+    backButton.frame = CGRectMake(0, 10, 14.4, 24);
     [backButton addTarget:self action:@selector(click_backButton) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backButton];
-    
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backView];
+
     _rightNaviItem = [[UIButton alloc] init];
     _rightNaviItem.frame = CGRectMake(0, 0, 50, 44);
     _rightNaviItem.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
@@ -203,7 +204,7 @@
     //获取资源
     if (self.assetDict) {
         PHAssetCollection *collection = self.assetDict[@"collection"];
-        self.navigationItem.title = collection.localizedTitle?:@"";
+        self.navigationItem.title = collection.localizedTitle?:@"照片";
         _asset = self.assetDict[@"asset"];
     } else {
         self.navigationItem.title = @"所有照片";
@@ -246,7 +247,7 @@
 }
 
 - (void)click_naviRight {
-
+    
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
     NSMutableArray *results = [NSMutableArray arrayWithCapacity:_selectIndexArr.count];
     
@@ -296,7 +297,7 @@
 
 - (void)callBackWithResults:(NSArray *)results {
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-
+    
     if ([config.delegate respondsToSelector:@selector(photoAlbumDidSelectResult:)]) {
         [config.delegate photoAlbumDidSelectResult:results];
     }
@@ -340,7 +341,14 @@
     PHAsset *asset = [_asset objectAtIndex:indexPath.row];
     cell.assetIdentifier = asset.localIdentifier;
     cell.delegate = self;
-    cell.photoSelect = [_selectIndexArr containsObject:@(indexPath.row)];
+    BOOL contains = [_selectIndexArr containsObject:@(indexPath.row)];
+    cell.photoSelect = contains;
+    if (contains) {
+        NSInteger index = [_selectIndexArr indexOfObject:@(indexPath.row)];
+        cell.selectIndex = index + 1;
+    } else {
+        cell.selectIndex = 0;
+    }
     
     [_imageManager requestImageForAsset:asset targetSize:_thumSize contentMode:PHImageContentModeAspectFit options:_reqeustOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -415,7 +423,7 @@
             next = nil;
         }
     }];
- 
+    
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -435,8 +443,11 @@
             [_selectIndexArr removeObjectAtIndex:0];
         }
         [_selectIndexArr addObject:@(indexPath.row)];
+        NSInteger index = [_selectIndexArr indexOfObject:@(indexPath.row)];
+        photoCell.selectIndex = index + 1;
     } else {//取消选中
         [_selectIndexArr removeObject:@(indexPath.row)];
+        photoCell.selectIndex = 0;
     }
     _rightNaviItem.hidden = (_selectIndexArr.count == 0);
     return YES;

@@ -39,11 +39,12 @@
     
     self.navigationItem.title = @"相册";
     UIButton *backButton = [[UIButton alloc] init];
-    [backButton setImage:[UIImage imageNamed:@"login_icon_back"] forState:UIControlStateNormal];
+    [backButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
+    UIView *backView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 44, 44)];
+    [backView addSubview:backButton];
+    backButton.frame = CGRectMake(0, 10, 14.4, 24);
     [backButton addTarget:self action:@selector(click_backButton) forControlEvents:UIControlEventTouchUpInside];
-    backButton.frame = CGRectMake(0, 0, 50, 44);
-    backButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backButton];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backView];
 }
 
 - (void)viewWillLayoutSubviews {

@@ -14,7 +14,7 @@
 
 @property (nonatomic, strong) UIButton *selectButton;
 
-@property (nonatomic, strong) CATextLayer *selectNumLayer;
+@property (nonatomic, strong) UILabel *selectNumLabel;
 
 @end
 
@@ -34,8 +34,8 @@
     [self.contentView addSubview:_imageView];
     
     _selectButton = [[UIButton alloc] init];
-    [_selectButton setBackgroundImage:[UIImage imageNamed:@"choose"] forState:UIControlStateNormal];
-    [_selectButton setBackgroundImage:[UIImage imageNamed:@"choose"] forState:UIControlStateHighlighted];
+    [_selectButton setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateNormal];
+    [_selectButton setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateHighlighted];
     [_selectButton addTarget:self action:@selector(click_selectButton) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:_selectButton];
 }
@@ -55,7 +55,7 @@
                 scaleAnim.keyTimes = @[@(0.f), @(0.5f), @(0.9f), @(1.0f)];
                 scaleAnim.duration = 0.4;
                 scaleAnim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-                [self.selectNumLayer addAnimation:scaleAnim forKey:nil];
+                [self.selectButton.layer addAnimation:scaleAnim forKey:nil];
             }
         }
     }
@@ -74,22 +74,33 @@
 - (void)setPhotoSelect:(BOOL)photoSelect {
     _photoSelect = photoSelect;
     if (photoSelect) {
-        self.selectButton.layer.mask = self.selectNumLayer;
+        self.selectNumLabel.hidden = NO;
     } else {
-        self.selectButton.layer.mask = nil;
+        _selectNumLabel.hidden = YES;
     }
 }
 
-- (CATextLayer *)selectNumLayer {
-    if (!_selectNumLayer) {
-        _selectNumLayer = [CATextLayer layer];
-        _selectNumLayer.alignmentMode = kCAAlignmentCenter;
-        _selectNumLayer.backgroundColor = [UIColor greenColor].CGColor;
-        _selectNumLayer.frame = CGRectMake(0, 0, 25, 25);
-        _selectNumLayer.cornerRadius = 12.5;
-        _selectNumLayer.string = [[NSAttributedString alloc] initWithString:@"1" attributes:@{NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: [UIFont systemFontOfSize:15.0]}];
+- (void)setSelectIndex:(NSInteger)selectIndex {
+    if (selectIndex <= 0) {
+        return;
     }
-    return _selectNumLayer;
+    self.selectNumLabel.text = [NSString stringWithFormat:@"%zd", selectIndex];
+}
+
+- (UILabel *)selectNumLabel {
+    if (!_selectNumLabel) {
+        _selectNumLabel = [[UILabel alloc] init];
+        _selectNumLabel.textColor = [UIColor whiteColor];
+        _selectNumLabel.font = [UIFont systemFontOfSize:13];
+        _selectNumLabel.backgroundColor = [UIColor greenColor];
+        _selectNumLabel.textAlignment = NSTextAlignmentCenter;
+        
+        _selectNumLabel.frame = CGRectMake(0, 0, 25, 25);
+        _selectNumLabel.layer.cornerRadius = 12.5;
+        _selectNumLabel.layer.masksToBounds = YES;
+        [_selectButton addSubview:_selectNumLabel];
+    }
+    return _selectNumLabel;
 }
 
 @end
