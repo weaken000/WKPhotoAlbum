@@ -45,6 +45,7 @@
         [self addSubview:_rightButton];
         
         _selectButton = [[WKPhotoAlbumSelectButton alloc] init];
+        [_selectButton addTarget:target action:rightAction forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_selectButton];
         
         _leftButton.frame = CGRectMake(15, top, 44, 44);

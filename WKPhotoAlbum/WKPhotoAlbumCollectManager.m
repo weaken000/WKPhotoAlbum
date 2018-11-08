@@ -10,9 +10,23 @@
 #import "WKPhotoAlbumUtils.h"
 #import "WKPhotoAlbumConfig.h"
 
+@implementation WKPhotoAlbumModel
+
+- (instancetype)init {
+    if (self == [super init]) {
+        _collectIndex = -1;
+        _selectIndex  = 0;
+    }
+    return self;
+}
+
+@end
+
 @interface WKPhotoAlbumCollectManager()
 
 @property (nonatomic, strong, readwrite) PHCachingImageManager *cacheManager;
+
+@property (nonatomic, strong) NSMutableArray<id<WKPhotoAlbumCollectManagerChanged>> *listeners;
 
 @end
 
@@ -35,7 +49,8 @@
         }];
         
         _selectIndexArray = [NSMutableArray arrayWithCapacity:[WKPhotoAlbumConfig sharedConfig].maxSelectCount];
-        
+        _currentPreviewIndex = -1;
+        _isUseOrigin = NO;
     }
     return self;
 }
@@ -57,19 +72,24 @@
     //选择索引等于最后一个+1
     _allPhotoArray[index].selectIndex = _allPhotoArray[_selectIndexArray.lastObject.integerValue].selectIndex + 1;
     [_selectIndexArray addObject:@(index)];
+    
+    [self triggerListenerWithKey:@"selectIndexArray" value:self.selectIndexArray];
     return cancelSelectIndexPath;
 }
 
 - (void)cancelSelectIndex:(NSInteger)index {
     [_selectIndexArray removeObject:@(index)];
     NSInteger deltaIndex = _allPhotoArray[index].selectIndex;
+    _allPhotoArray[index].selectIndex = 0;
     for (NSNumber *leftIndex in _selectIndexArray) {
         WKPhotoAlbumModel *model = _allPhotoArray[[leftIndex integerValue]];
         if (model.selectIndex > deltaIndex) {
             model.selectIndex -= 1;
         }
     }
+    [self triggerListenerWithKey:@"selectIndexArray" value:self.selectIndexArray];
 }
+
 
 - (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
@@ -186,12 +206,71 @@
     return indexPaths;
 }
 
+- (void)addChangedListener:(id<WKPhotoAlbumCollectManagerChanged>)listener {
+    if (!listener) {
+        NSLog(@"listener can be nil");
+        return;
+    }
+    
+    if (![listener respondsToSelector:@selector(inListening)] && ![listener respondsToSelector:@selector(managerValueChangedForKey:withValue:)]) {
+        NSLog(@"listener should implement delegate methods");
+        return;
+    }
+    
+    [self.listeners addObject:listener];
+    if ([listener inListening]) {
+        [listener managerValueChangedForKey:@"selectIndexArray" withValue:self.selectIndexArray];
+        [listener managerValueChangedForKey:@"isUseOrigin" withValue:@(self.isUseOrigin)];
+        if (_currentPreviewIndex >= 0) {
+            [listener managerValueChangedForKey:@"currentPreviewIndex" withValue:@(self.currentPreviewIndex)];
+        }
+    }
+}
+
+- (void)removeListener:(id<WKPhotoAlbumCollectManagerChanged>)listener {
+    if (!listener) return;
+    [self.listeners removeObject:listener];
+}
+
+- (void)triggerListenerWithKey:(NSString *)key value:(id)value {
+    for (id<WKPhotoAlbumCollectManagerChanged> listener in self.listeners) {
+        if ([listener inListening]) {//
+            [listener managerValueChangedForKey:key withValue:value];
+        }
+    }
+}
+
+#pragma mark - setter
+- (void)setIsUseOrigin:(BOOL)isUseOrigin {
+    if (_isUseOrigin != isUseOrigin) {
+        _isUseOrigin = isUseOrigin;
+        [self triggerListenerWithKey:@"isUseOrigin" value:@(_isUseOrigin)];
+    }
+}
+- (void)setCurrentPreviewIndex:(NSInteger)currentPreviewIndex {
+    if (_currentPreviewIndex != currentPreviewIndex) {
+        _currentPreviewIndex = currentPreviewIndex;
+        [self triggerListenerWithKey:@"currentPreviewIndex" value:@(_currentPreviewIndex)];
+    }
+}
+
 #pragma mark - lazy load
 - (PHCachingImageManager *)cacheManager {
     if (!_cacheManager) {
         _cacheManager = [[PHCachingImageManager alloc] init];
     }
     return _cacheManager;
+}
+
+- (NSMutableArray<id<WKPhotoAlbumCollectManagerChanged>> *)listeners {
+    if (!_listeners) {
+        _listeners = [NSMutableArray array];
+    }
+    return _listeners;
+}
+
+- (void)dealloc {
+    [_listeners removeAllObjects];
 }
 
 @end

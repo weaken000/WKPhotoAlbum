@@ -24,8 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIColor *)r:(CGFloat)r g:(CGFloat)g b:(CGFloat)b a:(CGFloat)a;
 
-+ (UIImage *)createImageWithColor:(UIColor *)color;
-
 @end
 
 NS_ASSUME_NONNULL_END

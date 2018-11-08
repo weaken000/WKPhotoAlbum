@@ -12,9 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface WKPhotoAlbumCell : UITableViewCell
 
-@property (nonatomic, strong) UILabel *albumTitleLabel;
+@property (nonatomic, strong) UILabel     *albumTitleLabel;
 
-@property (nonatomic, strong) UILabel *albumCountLabel;
+@property (nonatomic, strong) UILabel     *albumCountLabel;
 
 @property (nonatomic, strong) UIImageView *albumCoverImageView;
 

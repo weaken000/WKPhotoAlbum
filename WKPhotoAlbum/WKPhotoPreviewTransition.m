@@ -85,9 +85,8 @@
     imageView.contentMode  = UIViewContentModeScaleAspectFill;
     [contrainer addSubview:imageView];
     
-//    imageView.frame = [fromVC.previewImageView.superview convertRect:fromVC.previewImageView.frame toView:contrainer];
-//    fromVC.previewImageView.hidden = YES;
-    imageView.frame = contrainer.bounds;
+    imageView.frame = [fromVC.dismissPreViewImageView.superview convertRect:fromVC.dismissPreViewImageView.frame toView:contrainer];
+    fromVC.dismissPreViewImageView.hidden = YES;
     
     CGRect cellRect = [toVC.selectCell.superview convertRect:toVC.selectCell.frame toView:contrainer];
     [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{

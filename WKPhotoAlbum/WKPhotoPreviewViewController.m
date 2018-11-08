@@ -13,16 +13,18 @@
 #import "WKPhotoAlbumUtils.h"
 
 #import "WKPhotoCollectBottomView.h"
-#import "WKPhotoPreviewCell.h"
+#import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoPreviewNavigationView.h"
+#import "WKPhotoAlbumSelectButton.h"
 
-@interface WKPhotoPreviewViewController ()<
-                                            UIScrollViewDelegate,
-                                            UIGestureRecognizerDelegate,
-                                            UICollectionViewDelegate,
-                                            UICollectionViewDataSource,
-                                            WKPhotoCollectBottomViewDelegate
-                                          >
+@interface WKPhotoPreviewViewController ()
+<
+UIScrollViewDelegate,
+UIGestureRecognizerDelegate,
+UICollectionViewDelegate,
+UICollectionViewDataSource,
+WKPhotoCollectBottomViewDelegate
+>
 
 @property (nonatomic, strong) UICollectionView  *previewCollectionView;
 
@@ -46,11 +48,12 @@
 @end
 
 @implementation WKPhotoPreviewViewController {
-    BOOL    _firstLayout;
-    CGPoint _clipStartPoint;
+    BOOL      _firstLayout;
+    CGPoint   _clipStartPoint;
     
     UIButton *_editAndClipBtn;
     UIButton *_cancelClipBtn;
+    UIPanGestureRecognizer *_dismissPanGesture;
 }
 
 #pragma mark - life circle
@@ -64,30 +67,7 @@
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-
-    _screenShotImageView.frame = self.view.bounds;
-    _previewCollectionView.frame = self.view.bounds;
-    CGFloat actionH = kActionViewPreViewHeight + kActionViewActionHeight;
-    if (@available(iOS 11.0, *)) {
-        actionH += self.view.safeAreaInsets.bottom;
-    }
-    _actionView.frame = CGRectMake(0, self.view.bounds.size.height - actionH, self.view.bounds.size.width, actionH);
-    
-    if (_firstLayout) {
-        [self.previewCollectionView setContentOffset:CGPointMake(self.manager.previewFromIndex * self.view.bounds.size.width, 0) animated:NO];
-//        _clipConfirmView.frame = CGRectMake(0,
-//                                            self.view.frame.size.height - 50,
-//                                            CGRectGetWidth(self.view.frame),
-//                                            50);
-        
-//        [self aspectFitImageViewForImage:self.coverImage];
-//        _videoPlayerLayer.frame = _previewImageView.bounds;
-//        _videoControl.frame = CGRectMake((_previewImageView.bounds.size.width - 50) * 0.5,
-//                                         (_previewImageView.bounds.size.height - 50) * 0.5, 50, 50);
-        
-        _firstLayout = NO;
-    }
-    
+    [self layoutSubview];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -102,6 +82,7 @@
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     [self removeNotification];
+    [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
 }
 
 - (void)setupSubviews {
@@ -122,23 +103,22 @@
     _previewCollectionView.delegate = self;
     _previewCollectionView.dataSource = self;
     _previewCollectionView.pagingEnabled = YES;
-    [_previewCollectionView registerClass:[WKPhotoPreviewCell class] forCellWithReuseIdentifier:@"cell"];
+    [_previewCollectionView registerClass:[WKPhotoAlbumPreviewCell class] forCellWithReuseIdentifier:@"cell"];
     [self.view addSubview:_previewCollectionView];
 
     _actionView = [[WKPhotoCollectBottomView alloc] initWithFrame:CGRectZero useForCollectVC:NO];
     _actionView.delegate = self;
-    [_actionView configSelectCount:self.manager.selectIndexArray.count];
-    [_actionView configUseOrigin:self.manager.isUseOrigin];
+    _actionView.manager = self.manager;
     [self.view addSubview:_actionView];
     
     _navigationView = [[WKPhotoPreviewNavigationView alloc] initWithTarget:self leftAction:@selector(click_naviLeft:) rightAction:@selector(click_naviRight:)];
+    [self.navigationView configSelectIndex:self.manager.allPhotoArray[self.manager.currentPreviewIndex].selectIndex];
     [self.view addSubview:_navigationView];
     
-//
-//    UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
-//    panGesture.delegate = self;
-//    [self.previewImageView addGestureRecognizer:panGesture];
-//
+    _dismissPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleDismissPanGesture:)];
+    _dismissPanGesture.delegate = self;
+    [self.previewCollectionView addGestureRecognizer:_dismissPanGesture];
+    [_previewCollectionView.panGestureRecognizer requireGestureRecognizerToFail:_dismissPanGesture];
     
     
 //    if (_previewAsset.mediaType != PHAssetMediaTypeImage) {//非图片预览模式
@@ -155,27 +135,75 @@
 //        [_previewImageView addSubview:_videoControl];
 //        [_videoControl addTarget:self action:@selector(click_videoControl) forControlEvents:UIControlEventTouchUpInside];
 //        [self addNotification];
-//    } else {//图片预览模式
-//        _scrollView.minimumZoomScale = 1.0;
-//        _scrollView.maximumZoomScale = 2.0;
-//        _scrollView.delegate = self;
-//
-//        self.clipConfirmView.hidden = NO;
-//    }
+
+}
+
+- (void)layoutSubview {
+    _screenShotImageView.frame = self.view.bounds;
+    _previewCollectionView.frame = self.view.bounds;
+    CGFloat actionH = kActionViewPreViewHeight + kActionViewActionHeight;
+    if (@available(iOS 11.0, *)) {
+        actionH += self.view.safeAreaInsets.bottom;
+    }
+    _actionView.frame = CGRectMake(0, self.view.bounds.size.height - actionH, self.view.bounds.size.width, actionH);
+    
+    if (_firstLayout) {
+        [self.previewCollectionView setContentOffset:CGPointMake(self.manager.currentPreviewIndex * self.view.bounds.size.width, 0) animated:NO];
+        //        _clipConfirmView.frame = CGRectMake(0,
+        //                                            self.view.frame.size.height - 50,
+        //                                            CGRectGetWidth(self.view.frame),
+        //                                            50);
+        
+        //        [self aspectFitImageViewForImage:self.coverImage];
+        //        _videoPlayerLayer.frame = _previewImageView.bounds;
+        //        _videoControl.frame = CGRectMake((_previewImageView.bounds.size.width - 50) * 0.5,
+        //                                         (_previewImageView.bounds.size.height - 50) * 0.5, 50, 50);
+        
+        _firstLayout = NO;
+    }
 }
 
 - (void)click_naviLeft:(UIButton *)sender {
     if (self.navigationView.isInEditMode) {
-        
+        [self.navigationView toEditMode:NO];
     } else {
         NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.frame.size.width;
-        WKPhotoPreviewCell *cell = (WKPhotoPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
-        self.coverImage = cell.thumImage;
+        WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
+        self.coverImage = cell.image;
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
 - (void)click_naviRight:(UIButton *)sender {
-   
+    if (self.navigationView.isInEditMode) {
+        [self.navigationView toEditMode:NO];
+    } else {
+        NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.frame.size.width;
+        WKPhotoAlbumModel *model = self.manager.allPhotoArray[index];
+        if (model.selectIndex > 0) {
+            [self.manager cancelSelectIndex:index];
+            [self.navigationView configSelectIndex:model.selectIndex];
+        } else {
+            [self.manager addSelectWithIndex:index];
+            [self.navigationView configSelectIndex:model.selectIndex];
+            [(WKPhotoAlbumSelectButton *)sender showAnimation];
+        }
+    }
+}
+
+#pragma mark - WKPhotoCollectBottomViewDelegate
+- (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView {
+    
+}
+- (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
+    if (!self.navigationView.isInEditMode) {
+        [self.navigationView toEditMode:YES];
+    }
+}
+- (void)actionViewDidClickUseOrigin:(WKPhotoCollectBottomView *)actionView useOrigin:(BOOL)useOrigin {
+    self.manager.isUseOrigin = useOrigin;
+}
+- (void)actionView:(WKPhotoCollectBottomView *)actionView didSelectIndex:(NSInteger)index {
+    [self.previewCollectionView setContentOffset:CGPointMake(index * self.previewCollectionView.frame.size.width, 0) animated:YES];
 }
 
 #pragma mark - UICollectionViewDataSource & UICollectionViewDelegate
@@ -183,27 +211,38 @@
     return self.manager.allPhotoArray.count;
 }
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    WKPhotoPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
+    WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
+    cell.cellType = WKPhotoAlbumCellTypePreview;
     WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
     cell.assetIdentifier = model.asset.localIdentifier;
     [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if (result) {
-            if ([cell.assetIdentifier isEqualToString:model.asset.localIdentifier]) {
-                cell.thumImage = result;
-            } else {
-                cell.thumImage = nil;
-            }
+        if ([cell.assetIdentifier isEqualToString:model.asset.localIdentifier] && result) {
+            cell.image = result;
         } else {
-            cell.thumImage = nil;
+            cell.image = nil;
         }
     }];
     return cell;
 }
 #pragma mark - UIScrollViewDelegate
+- (void)setNavigationBarSelectIndex {
+    if (self.previewCollectionView.bounds.size.width == 0) return;
+    NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.bounds.size.width;
+    self.manager.currentPreviewIndex = index;
+    [self.navigationView configSelectIndex:self.manager.allPhotoArray[index].selectIndex];
+}
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     [self.manager updateCacheForCollectionView:self.previewCollectionView
                                     withOffset:CGPointMake(-self.previewCollectionView.frame.size.width, 0)];
+    
 }
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
+    [self setNavigationBarSelectIndex];
+}
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    [self setNavigationBarSelectIndex];
+}
+
 
 - (void)setupClipMaskView {
 //    if (!_clipMaskImageView) {
@@ -294,48 +333,73 @@
 }
 
 #pragma mark - Action
-- (void)handlePanGesture:(UIPanGestureRecognizer *)pan {
-  
-//    switch (pan.state) {
-//        case UIGestureRecognizerStateChanged: {
-//            CGPoint offset = [pan translationInView:self.view];
-//            self.previewImageView.center = CGPointMake(self.scrollView.center.x + offset.x,
-//                                                       self.scrollView.center.y + offset.y);
-//            CGFloat maxOffsetX = self.view.frame.size.width  * 0.40;
-//            CGFloat maxOffsetY = self.view.frame.size.height * 0.40;
-//            CGFloat minScale   = 0.3;
-//            if (fabs(offset.x) > fabs(offset.y)) {
-//                CGFloat scale = 1 - (1 - minScale) / maxOffsetX * MIN(fabs(offset.x), maxOffsetX);
-//                CGFloat alpha = 1 - MIN(1.0, fabs(offset.x) / maxOffsetX);
-//                self.previewImageView.transform = CGAffineTransformMakeScale(scale, scale);
-//                self.scrollView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:alpha];
-//            } else {
-//                CGFloat scale = 1 - (1 - minScale) / maxOffsetY * MIN(fabs(offset.y), maxOffsetY);
-//                CGFloat alpha = 1 - MIN(1.0, fabs(offset.y) / maxOffsetY);
-//                self.previewImageView.transform = CGAffineTransformMakeScale(scale, scale);
-//                self.scrollView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:alpha];
-//            }
-//        }
-//            break;
-//        case UIGestureRecognizerStateEnded:
-//        case UIGestureRecognizerStateCancelled: {
-//            [UIView animateWithDuration:0.2 animations:^{
-//                if (self.previewImageView.transform.a <= 0.6) {
-//                    [self.navigationController popViewControllerAnimated:YES];
-//                } else {
-//                    self.previewImageView.transform = CGAffineTransformIdentity;
-//                    self.previewImageView.center = self.scrollView.center;
-//                    self.scrollView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:1.0];
-//                }
-//            }];
-//            break;
-//        }
-//        default:
-//            break;
-//    }
+- (void)handleDismissPanGesture:(UIPanGestureRecognizer *)pan {
+    
+    switch (pan.state) {
+        case UIGestureRecognizerStateBegan: {
+            WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+            if (!cell) return;
+            
+            if (!_dismissPreViewImageView) {
+                _dismissPreViewImageView = [[UIImageView alloc] init];
+                [self.view addSubview:_dismissPreViewImageView];
+            }
+            _dismissPreViewImageView.image = cell.image;
+            CGRect imageFrame = [cell.imageView.superview convertRect:cell.imageView.frame toView:self.view];
+            _dismissPreViewImageView.frame = imageFrame;
+            _dismissPreViewImageView.hidden = NO;
+            cell.hidden = YES;
+            break;
+        }
+        case UIGestureRecognizerStateChanged: {
+            if (!_dismissPreViewImageView) return;
+            CGPoint offset = [pan translationInView:self.view];
+            self.dismissPreViewImageView.center = CGPointMake(self.view.center.x + offset.x,
+                                                              self.view.center.y + offset.y);
+            CGFloat maxOffsetX = self.view.frame.size.width  * 0.40;
+            CGFloat maxOffsetY = self.view.frame.size.height * 0.40;
+            CGFloat minScale   = 0.3;
+            if (fabs(offset.x) > fabs(offset.y)) {
+                CGFloat scale = 1 - (1 - minScale) / maxOffsetX * MIN(fabs(offset.x), maxOffsetX);
+                CGFloat alpha = 1 - MIN(1.0, fabs(offset.x) / maxOffsetX);
+                self.dismissPreViewImageView.transform = CGAffineTransformMakeScale(scale, scale);
+                self.previewCollectionView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:alpha];
+            } else {
+                CGFloat scale = 1 - (1 - minScale) / maxOffsetY * MIN(fabs(offset.y), maxOffsetY);
+                CGFloat alpha = 1 - MIN(1.0, fabs(offset.y) / maxOffsetY);
+                self.dismissPreViewImageView.transform = CGAffineTransformMakeScale(scale, scale);
+                self.previewCollectionView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:alpha];
+            }
+        }
+            break;
+        case UIGestureRecognizerStateEnded:
+        case UIGestureRecognizerStateCancelled: {
+            __block BOOL isPop = NO;
+            [UIView animateWithDuration:0.2 animations:^{
+                if (self.dismissPreViewImageView.transform.a <= 0.6) {
+                    isPop = YES;
+                    [self.navigationController popViewControllerAnimated:YES];
+                } else {
+                    self.dismissPreViewImageView.transform = CGAffineTransformIdentity;
+                    self.dismissPreViewImageView.center = self.view.center;
+                    self.previewCollectionView.backgroundColor = [UIColor blackColor];
+                }
+            } completion:^(BOOL finished) {
+                if (!isPop) {
+                    WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+                    cell.hidden = NO;
+                    self.dismissPreViewImageView.hidden = YES;
+                }
+            }];
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 - (void)handlePanClipGesture:(UIPanGestureRecognizer *)pan {
+    
 //    switch (pan.state) {
 //        case UIGestureRecognizerStateBegan:
 //            _clipStartPoint = _clipMaskImageView.center;
@@ -361,30 +425,6 @@
 //            break;
 //        default:
 //            break;
-//    }
-}
-
-- (void)click_chooseButton {
-//    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-//    if (_previewAsset.mediaType == PHAssetMediaTypeImage) {
-//        PHImageRequestOptions *option = [[PHImageRequestOptions alloc] init];
-//        option.deliveryMode = config.imageDeliveryMode;
-//        option.synchronous = NO;
-//        CGFloat width = [UIScreen mainScreen].bounds.size.width * [UIScreen mainScreen].scale;
-//        [WKPhotoAlbumUtils readImageByAsset:_previewAsset size:CGSizeMake(width, width) deliveryMode:config.imageDeliveryMode contentModel:PHImageContentModeAspectFill synchronous:NO complete:^(UIImage * _Nullable image) {
-//            dispatch_async(dispatch_get_main_queue(), ^{
-//                [self callBackWithResults:@[image]];
-//            });
-//        }];
-//    } else if (_previewAsset.mediaType == PHAssetMediaTypeVideo) {
-//        PHVideoRequestOptions *option = [[PHVideoRequestOptions alloc] init];
-//        option.deliveryMode = config.videoDeliveryMode;
-//        [[PHImageManager defaultManager] requestAVAssetForVideo:_previewAsset options:option resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-//            dispatch_async(dispatch_get_main_queue(), ^{
-//                NSURL *url = [asset valueForKey:@"URL"];
-//                [self callBackWithResults:@[url]];
-//            });
-//        }];
 //    }
 }
 
@@ -502,19 +542,25 @@
 }
 
 #pragma mark - UIGestureRecognizerDelegate
-//- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+    if (gestureRecognizer == _dismissPanGesture) {
+        CGPoint offset = [_dismissPanGesture translationInView:_dismissPanGesture.view];
+        return fabs(offset.y) > fabs(offset.x) * 2;
+    }
+    return NO;
 //    if (gestureRecognizer.view == _previewImageView) {
 //        return YES;
 //    }
 //    CGPoint location = [gestureRecognizer locationInView:self.clipMaskImageView];
-//    
+//
 //    CGFloat itemW = MIN(_previewImageView.frame.size.width, _previewImageView.frame.size.height);
 //    CGFloat cornetRaidus = (itemW - 20) * 0.5;
 //    CGPoint center = CGPointMake(self.clipMaskImageView.bounds.size.width * 0.5, self.clipMaskImageView.bounds.size.height * 0.5);
 //    CGFloat deltaX = location.x - center.x;
 //    CGFloat deltaY = location.y - center.y;
 //    return sqrt(deltaX * deltaX + deltaY * deltaY) <= cornetRaidus;
-//}
+//    return YES;
+}
 
 
 #pragma mark - UINavigationControllerDelegate

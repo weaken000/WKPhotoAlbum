@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@class WKPhotoCollectBottomView;
+@class WKPhotoCollectBottomView, WKPhotoAlbumCollectManager;
 
 
 NS_ASSUME_NONNULL_BEGIN
@@ -23,6 +23,7 @@ UIKIT_EXTERN CGFloat const kActionViewActionHeight;
 - (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView;
 - (void)actionViewDidClickUseOrigin:(WKPhotoCollectBottomView *)actionView useOrigin:(BOOL)useOrigin;
 - (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView;
+- (void)actionView:(WKPhotoCollectBottomView *)actionView didSelectIndex:(NSInteger)index;
 
 @end
 
@@ -30,11 +31,9 @@ UIKIT_EXTERN CGFloat const kActionViewActionHeight;
 
 @property (nonatomic, weak) id<WKPhotoCollectBottomViewDelegate> delegate;
 
+@property (nonatomic, weak) WKPhotoAlbumCollectManager *manager;
+
 - (instancetype)initWithFrame:(CGRect)frame useForCollectVC:(BOOL)useForCollectVC;
-
-- (void)configSelectCount:(NSInteger)selectCount;
-
-- (void)configUseOrigin:(BOOL)useOrigin;
 
 @end
 
