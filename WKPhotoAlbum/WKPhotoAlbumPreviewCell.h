@@ -44,6 +44,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) WKPhotoAlbumCellType cellType;
 
+- (void)intoClipMode:(BOOL)clipMode;
+
 @end
 
 NS_ASSUME_NONNULL_END

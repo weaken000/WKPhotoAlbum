@@ -9,7 +9,7 @@
 #import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoAlbumSelectButton.h"
 
-@interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate, UIGestureRecognizerDelegate>
+@interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate>
 
 @property (nonatomic, strong) WKPhotoAlbumSelectButton *selectButton;
 
@@ -37,7 +37,6 @@
         _imageContentScrollView = [[UIScrollView alloc] initWithFrame:self.bounds];
         _imageContentScrollView.showsVerticalScrollIndicator = NO;
         _imageContentScrollView.showsHorizontalScrollIndicator = NO;
-        _imageContentScrollView.minimumZoomScale = 1.0;
         _imageContentScrollView.maximumZoomScale = 2.0;
         _imageContentScrollView.zoomScale = 1.0;
         _imageContentScrollView.delegate = self;
@@ -48,7 +47,6 @@
         _doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap:)];
         _doubleTapGesture.numberOfTapsRequired = 2;
         _doubleTapGesture.numberOfTouchesRequired = 1;
-        _doubleTapGesture.delegate = self;
         [self addGestureRecognizer:_doubleTapGesture];
         
     } else {
@@ -87,7 +85,6 @@
         [self setupSubviews];
     }
 }
-
 - (void)setImage:(UIImage *)image {
     _image = image;
     if (_cellType == WKPhotoAlbumCellTypePreview) {
@@ -96,7 +93,6 @@
         _imageView.image = image;
     }
 }
-
 - (void)setSelectIndex:(NSInteger)selectIndex {
     self.selectButton.selectIndex = selectIndex;
 }
@@ -112,6 +108,26 @@
     _imageView.image = image;
 }
 
+- (void)intoClipMode:(BOOL)clipMode {
+    if (clipMode) {
+        CGFloat topMargin = [UIApplication sharedApplication].statusBarFrame.size.height + 44.0;
+        if (self.imageView.frame.origin.y + 20.0 < topMargin) {
+            CGFloat zoom = (self.imageView.frame.size.height - (topMargin + 20.0 - self.imageView.frame.origin.y) * 2) / self.imageView.frame.size.height;
+            self.imageContentScrollView.minimumZoomScale = zoom;
+            [self.imageContentScrollView setZoomScale:zoom animated:YES];
+        } else {
+            CGFloat zoom = (self.imageView.frame.size.width - 50.0) / self.imageView.frame.size.width;
+            self.imageContentScrollView.minimumZoomScale = zoom;
+            [self.imageContentScrollView setZoomScale:zoom animated:YES];
+        }
+        self.imageContentScrollView.scrollEnabled = NO;
+    } else {
+        [self.imageContentScrollView setZoomScale:1.0 animated:YES];
+        self.imageContentScrollView.minimumZoomScale = 1.0;
+        self.imageContentScrollView.scrollEnabled = YES;
+    }
+}
+
 #pragma mark - UIScrollViewDelegate
 - (UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
     return _imageView;
@@ -124,14 +140,6 @@
     _imageView.frame = frame;
     scrollView.contentSize = CGSizeMake(frame.size.width, frame.size.height);
 }
-
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
-    if (gestureRecognizer == _doubleTapGesture) {
-        return YES;
-    }
-    return NO;
-}
-
 
 - (UIView *)videoContentView {
     if (!_videoContentView) {

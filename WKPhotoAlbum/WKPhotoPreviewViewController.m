@@ -34,8 +34,6 @@ WKPhotoCollectBottomViewDelegate
 
 @property (nonatomic, strong) UIImageView   *clipMaskImageView;
 
-@property (nonatomic, strong) UIView        *clipConfirmView;
-
 //video
 @property (nonatomic, strong) UIButton      *videoControl;
 
@@ -50,10 +48,9 @@ WKPhotoCollectBottomViewDelegate
 @implementation WKPhotoPreviewViewController {
     BOOL      _firstLayout;
     CGPoint   _clipStartPoint;
-    
-    UIButton *_editAndClipBtn;
-    UIButton *_cancelClipBtn;
+
     UIPanGestureRecognizer *_dismissPanGesture;
+    UITapGestureRecognizer *_hiddenTapGesture;
 }
 
 #pragma mark - life circle
@@ -120,6 +117,9 @@ WKPhotoCollectBottomViewDelegate
     [self.previewCollectionView addGestureRecognizer:_dismissPanGesture];
     [_previewCollectionView.panGestureRecognizer requireGestureRecognizerToFail:_dismissPanGesture];
     
+    _hiddenTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleHiddenGesture:)];
+    [self.previewCollectionView addGestureRecognizer:_hiddenTapGesture];
+    
 //    if (_previewAsset.mediaType != PHAssetMediaTypeImage) {//非图片预览模式
 //        _videoPlayer      = [AVPlayer playerWithPlayerItem:_playerItem];
 //        _videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:_videoPlayer];
@@ -164,14 +164,14 @@ WKPhotoCollectBottomViewDelegate
 
 - (void)click_naviLeft:(UIButton *)sender {
     if (self.navigationView.isInEditMode) {
-        [self.navigationView toEditMode:NO];
+        [self intoEditMode:NO];
     } else {
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
 - (void)click_naviRight:(UIButton *)sender {
     if (self.navigationView.isInEditMode) {
-        [self.navigationView toEditMode:NO];
+        [self clipImage];
     } else {
         NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.frame.size.width;
         WKPhotoAlbumModel *model = self.manager.allPhotoArray[index];
@@ -192,7 +192,7 @@ WKPhotoCollectBottomViewDelegate
 }
 - (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
     if (!self.navigationView.isInEditMode) {
-        [self.navigationView toEditMode:YES];
+        [self intoEditMode:YES];
     }
 }
 - (void)actionViewDidClickUseOrigin:(WKPhotoCollectBottomView *)actionView useOrigin:(BOOL)useOrigin {
@@ -220,15 +220,6 @@ WKPhotoCollectBottomViewDelegate
     }];
     return cell;
 }
-- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if (self.navigationView.alpha == 0.0) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hiddenBar) object:nil];
-        [self performSelector:@selector(showBar) withObject:nil afterDelay:0.5];
-    } else {
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showBar) object:nil];
-        [self performSelector:@selector(hiddenBar) withObject:nil afterDelay:0.5];
-    }
-}
 
 #pragma mark - UIScrollViewDelegate
 - (void)setNavigationBarSelectIndex {
@@ -240,7 +231,6 @@ WKPhotoCollectBottomViewDelegate
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     [self.manager updateCacheForCollectionView:self.previewCollectionView
                                     withOffset:CGPointMake(-self.previewCollectionView.frame.size.width, 0)];
-    
 }
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
@@ -262,57 +252,73 @@ WKPhotoCollectBottomViewDelegate
         self.actionView.alpha = 0.0;
     }];
 }
-
-
+- (void)intoEditMode:(BOOL)editMode {
+    [self.navigationView toEditMode:editMode];
+    if (editMode) {
+        self.actionView.hidden = YES;
+        _hiddenTapGesture.enabled = NO;
+        _dismissPanGesture.enabled = NO;
+        self.previewCollectionView.scrollEnabled = NO;
+        [self setupClipMaskView];
+    } else {
+        self.actionView.hidden = NO;
+        _hiddenTapGesture.enabled = YES;
+        _dismissPanGesture.enabled = YES;
+        self.previewCollectionView.scrollEnabled = YES;
+        _clipMaskImageView.hidden = YES;
+        WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+        [cell intoClipMode:NO];
+    }
+}
 - (void)setupClipMaskView {
-//    if (!_clipMaskImageView) {
-//
-//        CGFloat itemW = MIN(_previewImageView.frame.size.width, _previewImageView.frame.size.height);
-//
-//        CGSize contextSize = self.scrollView.bounds.size;
-//        if (self.coverImage.size.width > self.coverImage.size.height) {
-//            contextSize.width += (_previewImageView.frame.size.width - itemW);
-//        } else {
-//            contextSize.height += (_previewImageView.frame.size.height - itemW);
-//        }
-//        UIGraphicsBeginImageContext(contextSize);
-//        CGContextRef ctx = UIGraphicsGetCurrentContext();
-//        [[UIColor colorWithRed:0 green:0 blue:0 alpha:0.7] set];
-//        CGContextAddRect(ctx, CGRectMake(0, 0, contextSize.width, contextSize.height));
-//        CGContextFillPath(ctx);
-//
-//        CGContextSetBlendMode(ctx, kCGBlendModeClear);
-//        CGContextFillEllipseInRect(ctx, CGRectMake(contextSize.width * 0.5 - itemW * 0.5 + 10, contextSize.height * 0.5 - itemW * 0.5 + 10, itemW - 20, itemW - 20));
-//        CGContextFillPath(ctx);
-//
-//        UIImage *clipImage = UIGraphicsGetImageFromCurrentImageContext();
-//        UIGraphicsEndImageContext();
-//
-//        _clipMaskImageView = [[UIImageView alloc] initWithImage:clipImage];
-//        _clipMaskImageView.userInteractionEnabled = YES;
-//        if (_coverImage.size.width != _coverImage.size.height) {
-//            UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanClipGesture:)];
-//            pan.delegate = self;
-//            [_clipMaskImageView addGestureRecognizer:pan];
-//        }
-//        [self.scrollView addSubview:_clipMaskImageView];
-//    }
-//
-//    CGPoint center = _clipMaskImageView.center;
-//    center.y = CGRectGetMidY(_previewImageView.frame);
-//    center.x = CGRectGetMidX(_previewImageView.frame);
-//    _clipMaskImageView.center = center;
-//    _clipMaskImageView.hidden = NO;
+    if (!_clipMaskImageView) {
+        _clipMaskImageView = [[UIImageView alloc] init];
+        _clipMaskImageView.userInteractionEnabled = YES;
+        [self.view insertSubview:_clipMaskImageView belowSubview:self.navigationView];
+    }
+    
+    WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+    [cell intoClipMode:YES];
+    [self.view layoutSubviews];
+    
+    CGRect imageRect = [cell.imageView.superview convertRect:cell.imageView.frame toView:self.view];
+    CGFloat itemW = MIN(imageRect.size.width, imageRect.size.height);
+    
+    CGSize contextSize = self.view.bounds.size;
+    if (imageRect.size.width > imageRect.size.height) {
+        contextSize.width += (imageRect.size.width - itemW);
+    } else {
+        contextSize.height += (imageRect.size.height - itemW);
+    }
+    UIGraphicsBeginImageContext(contextSize);
+    CGContextRef ctx = UIGraphicsGetCurrentContext();
+    [[UIColor colorWithRed:1 green:1 blue:1 alpha:0.3] set];
+    CGContextAddRect(ctx, CGRectMake(0, 0, contextSize.width, contextSize.height));
+    CGContextFillPath(ctx);
+    
+    CGContextSetBlendMode(ctx, kCGBlendModeClear);
+    CGContextFillEllipseInRect(ctx, CGRectMake(contextSize.width * 0.5 - itemW * 0.5 + 10, contextSize.height * 0.5 - itemW * 0.5 + 10, itemW - 20, itemW - 20));
+    CGContextFillPath(ctx);
+    
+    UIImage *clipImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    _clipMaskImageView.image = clipImage;
+    _clipMaskImageView.frame = CGRectMake(0, 0, contextSize.width, contextSize.height);
+    
+    if (cell.imageView.frame.size.width != cell.imageView.frame.size.height && !_clipMaskImageView.gestureRecognizers.count) {
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanClipGesture:)];
+        pan.delegate = self;
+        [_clipMaskImageView addGestureRecognizer:pan];
+    }
+    if (cell.imageView.frame.size.width == cell.imageView.frame.size.height && _clipMaskImageView.gestureRecognizers.count > 0) {
+        [_clipMaskImageView removeGestureRecognizer:_clipMaskImageView.gestureRecognizers.firstObject];
+    }
+    _clipMaskImageView.center = self.view.center;
+    _clipMaskImageView.hidden = NO;
 }
 
 #pragma mark -
-- (void)aspectFitImageViewForImage:(UIImage *)image {
-//    CGFloat scale = MIN(self.scrollView.frame.size.width / image.size.width, self.scrollView.frame.size.height / image.size.height);
-//    CGFloat w = scale * image.size.width;
-//    CGFloat h = scale * image.size.height;
-//    _previewImageView.frame = CGRectMake((self.scrollView.frame.size.width - w) * 0.5, (self.scrollView.frame.size.height - h) * 0.5, w, h);
-}
-
 - (CGSize)targetSize {
     CGFloat scale = [UIScreen mainScreen].scale;
     return CGSizeMake([UIScreen mainScreen].bounds.size.width * scale,
@@ -331,39 +337,33 @@ WKPhotoCollectBottomViewDelegate
 
 
 - (void)clipImage {
+    WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+    CGFloat margin = 10;
+    CGFloat itemW = MIN(cell.imageView.frame.size.width, cell.imageView.frame.size.height);
+    CGFloat delta = cell.image.size.width / cell.imageView.frame.size.width;
+    CGFloat cornerRadius = (itemW - 2 * margin) * 0.5;
+
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(cornerRadius * 2 * delta, cornerRadius * 2 * delta), NO, cell.image.scale);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, cornerRadius * 2 * delta, cornerRadius * 2 * delta) cornerRadius:cornerRadius * delta];
+    CGContextAddPath(context, path.CGPath);
+    CGContextClip(context);
+
+    CGRect rect = CGRectMake(- (self.clipMaskImageView.center.x - cell.imageView.frame.origin.x - cornerRadius) * delta,
+                             - (self.clipMaskImageView.center.y - cell.imageView.frame.origin.y - cornerRadius) * delta,
+                             cell.image.size.width,
+                             cell.image.size.height);
+    [cell.image drawInRect:rect];
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
     
-//    CGFloat margin = 10;
-//    CGFloat itemW = MIN(self.previewImageView.frame.size.width, self.previewImageView.frame.size.height);
-//    CGFloat delta = self.coverImage.size.width / self.previewImageView.frame.size.width;
-//    CGFloat cornerRadius = (itemW - 2 * margin) * 0.5;
-//
-//    UIGraphicsBeginImageContextWithOptions(CGSizeMake(cornerRadius * 2 * delta, cornerRadius * 2 * delta), NO, self.coverImage.scale);
-//    CGContextRef context = UIGraphicsGetCurrentContext();
-//    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, cornerRadius * 2 * delta, cornerRadius * 2 * delta) cornerRadius:cornerRadius * delta];
-//    CGContextAddPath(context, path.CGPath);
-//    CGContextClip(context);
-//
-//    CGRect rect = CGRectMake(- (self.clipMaskImageView.center.x - self.previewImageView.frame.origin.x - cornerRadius) * delta,
-//                             - (self.clipMaskImageView.center.y - self.previewImageView.frame.origin.y - cornerRadius) * delta,
-//                             self.coverImage.size.width,
-//                             self.coverImage.size.height);
-//    [self.coverImage drawInRect:rect];
-//    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
-//    UIGraphicsEndImageContext();
-//
-//    [UIView animateWithDuration:0.5 animations:^{
-//        self.clipConfirmView.transform = CGAffineTransformMakeTranslation(0, 50);
-//    }];
-//    self.clipMaskImageView.hidden = YES;
-//
-//    self.previewImageView.image = newImage;
-//    self.scrollView.frame = self.view.bounds;
-//    [self aspectFitImageViewForImage:newImage];
+    [self intoEditMode:NO];
+    cell.image = newImage;
+    self.manager.allPhotoArray[self.manager.currentPreviewIndex].resultImage = newImage;
 }
 
 #pragma mark - Action
 - (void)handleDismissPanGesture:(UIPanGestureRecognizer *)pan {
-    
     switch (pan.state) {
         case UIGestureRecognizerStateBegan: {
             WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
@@ -431,34 +431,46 @@ WKPhotoCollectBottomViewDelegate
     }
 }
 
+- (void)handleHiddenGesture:(UITapGestureRecognizer *)tap {
+    if (self.navigationView.alpha == 0.0) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hiddenBar) object:nil];
+        [self performSelector:@selector(showBar) withObject:nil afterDelay:0.5];
+    } else {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showBar) object:nil];
+        [self performSelector:@selector(hiddenBar) withObject:nil afterDelay:0.5];
+    }
+}
+
 - (void)handlePanClipGesture:(UIPanGestureRecognizer *)pan {
     
-//    switch (pan.state) {
-//        case UIGestureRecognizerStateBegan:
-//            _clipStartPoint = _clipMaskImageView.center;
-//            break;
-//        case UIGestureRecognizerStateChanged: {
-//            CGPoint offset = [pan translationInView:self.view];
-//            if (self.coverImage.size.width > self.coverImage.size.height) {
-//                CGFloat offsetX = offset.x;
-//                CGPoint center = _clipMaskImageView.center;
-//                center.x = _clipStartPoint.x + offsetX;
-//                center.x = MIN(_previewImageView.frame.size.width - _previewImageView.frame.size.height * 0.5, center.x);
-//                center.x = MAX(_previewImageView.frame.size.height * 0.5, center.x);
-//                _clipMaskImageView.center = center;
-//            } else {
-//                CGFloat offsetY = offset.y;
-//                CGPoint center = _clipMaskImageView.center;
-//                center.y = _clipStartPoint.y + offsetY;
-//                center.y = MIN(_previewImageView.frame.size.height - _previewImageView.frame.size.width * 0.5 + _previewImageView.frame.origin.y, center.y);
-//                center.y = MAX(_previewImageView.frame.size.width * 0.5 + _previewImageView.frame.origin.y, center.y);
-//                _clipMaskImageView.center = center;
-//            }
-//        }
-//            break;
-//        default:
-//            break;
-//    }
+    switch (pan.state) {
+        case UIGestureRecognizerStateBegan:
+            _clipStartPoint = _clipMaskImageView.center;
+            break;
+        case UIGestureRecognizerStateChanged: {
+            CGPoint offset = [pan translationInView:self.view];
+            if (_clipMaskImageView.frame.size.width > self.view.frame.size.width) {
+                CGFloat delta = (_clipMaskImageView.frame.size.width - self.view.frame.size.width) * 0.5;
+                CGFloat offsetX = offset.x;
+                CGPoint center = _clipMaskImageView.center;
+                center.x = _clipStartPoint.x + offsetX;
+                center.x = MIN(self.view.frame.size.width * 0.5 + delta, center.x);
+                center.x = MAX(self.view.frame.size.width * 0.5 - delta, center.x);
+                _clipMaskImageView.center = center;
+            } else {
+                CGFloat delta = (_clipMaskImageView.frame.size.height - self.view.frame.size.height) * 0.5;
+                CGFloat offsetY = offset.y;
+                CGPoint center = _clipMaskImageView.center;
+                center.y = _clipStartPoint.y + offsetY;
+                center.y = MIN(self.view.frame.size.height * 0.5 + delta, center.y);
+                center.y = MAX(self.view.frame.size.height * 0.5 - delta, center.y);
+                _clipMaskImageView.center = center;
+            }
+        }
+            break;
+        default:
+            break;
+    }
 }
 
 - (void)callBackWithResults:(NSArray *)results {
@@ -476,44 +488,6 @@ WKPhotoCollectBottomViewDelegate
         [self.navigationController dismissViewControllerAnimated:YES completion:nil];
     }
     [WKPhotoAlbumConfig clearReback];
-}
-
-
-- (void)click_editAndClipButton {
-//    if (_cancelClipBtn.isHidden) {
-//        self.scrollView.zoomScale = 1.0;
-//        [self aspectFitImageViewForImage:_coverImage];
-//        [self setupClipMaskView];
-//        self.clipMaskImageView.alpha = 0.0;
-//        self.scrollView.scrollEnabled = NO;
-//
-//        [UIView animateWithDuration:0.5 animations:^{
-//            self.clipConfirmView.transform = CGAffineTransformMakeTranslation(0, 50);
-//        } completion:^(BOOL finished) {
-//            [_editAndClipBtn setTitle:@"裁剪" forState:UIControlStateNormal];
-//            _cancelClipBtn.hidden = NO;
-//            [UIView animateWithDuration:0.5 animations:^{
-//                self.clipMaskImageView.alpha = 1.0;
-//                _clipConfirmView.transform = CGAffineTransformIdentity;
-//            }];
-//        }];
-//    } else {
-//        [self clipImage];
-//    }
-}
-
-- (void)click_cancelClipButton {
-//    self.scrollView.scrollEnabled = YES;
-//    self.clipMaskImageView.hidden = YES;
-//    [UIView animateWithDuration:0.5 animations:^{
-//        _clipConfirmView.transform = CGAffineTransformMakeTranslation(0, 50);
-//    } completion:^(BOOL finished) {
-//        [_editAndClipBtn setTitle:@"编辑" forState:UIControlStateNormal];
-//        _cancelClipBtn.hidden = YES;
-//        [UIView animateWithDuration:0.3 animations:^{
-//            _clipConfirmView.transform = CGAffineTransformIdentity;
-//        }];
-//    }];
 }
 
 - (void)click_videoControl {
@@ -580,19 +554,10 @@ WKPhotoCollectBottomViewDelegate
         CGPoint offset = [_dismissPanGesture translationInView:_dismissPanGesture.view];
         return fabs(offset.y) > fabs(offset.x) * 2;
     }
+    if (gestureRecognizer.view == _clipMaskImageView) {
+        return YES;
+    }
     return NO;
-//    if (gestureRecognizer.view == _previewImageView) {
-//        return YES;
-//    }
-//    CGPoint location = [gestureRecognizer locationInView:self.clipMaskImageView];
-//
-//    CGFloat itemW = MIN(_previewImageView.frame.size.width, _previewImageView.frame.size.height);
-//    CGFloat cornetRaidus = (itemW - 20) * 0.5;
-//    CGPoint center = CGPointMake(self.clipMaskImageView.bounds.size.width * 0.5, self.clipMaskImageView.bounds.size.height * 0.5);
-//    CGFloat deltaX = location.x - center.x;
-//    CGFloat deltaY = location.y - center.y;
-//    return sqrt(deltaX * deltaX + deltaY * deltaY) <= cornetRaidus;
-//    return YES;
 }
 
 
@@ -605,43 +570,8 @@ WKPhotoCollectBottomViewDelegate
         return nil;
     }
     return [WKPhotoPreviewTransition animationWithAnimationControllerForOperation:operation completed:^{
-//        self.previewImageView.image = self.coverImage;
+
     }];
 }
-
-#pragma mark - Lazy load
-- (UIView *)clipConfirmView {
-    if (!_clipConfirmView) {
-        _clipConfirmView = [[UIView alloc] init];
-        _clipConfirmView.backgroundColor = [UIColor whiteColor];
-        
-        _editAndClipBtn = [[UIButton alloc] init];
-        [_editAndClipBtn addTarget:self action:@selector(click_editAndClipButton) forControlEvents:UIControlEventTouchUpInside];
-        _editAndClipBtn.titleLabel.font = [UIFont systemFontOfSize:16.0];
-        [_editAndClipBtn setTitle:@"编辑" forState:UIControlStateNormal];
-        [_editAndClipBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-        _editAndClipBtn.frame = CGRectMake(CGRectGetWidth(self.view.frame) - 85, 0, 65, 50);
-        [_clipConfirmView addSubview:_editAndClipBtn];
-        
-        _cancelClipBtn = [[UIButton alloc] init];
-        [_cancelClipBtn addTarget:self action:@selector(click_cancelClipButton) forControlEvents:UIControlEventTouchUpInside];
-        _cancelClipBtn.titleLabel.font = [UIFont systemFontOfSize:16.0];
-        [_cancelClipBtn setTitle:@"取消" forState:UIControlStateNormal];
-        [_cancelClipBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-        _cancelClipBtn.frame = CGRectMake(20, 0, 65, 50);
-        [_clipConfirmView addSubview:_cancelClipBtn];
-        _cancelClipBtn.hidden = YES;
-        
-        UIBezierPath *path = [UIBezierPath bezierPath];
-        [path moveToPoint:CGPointZero];
-        [path addLineToPoint:CGPointMake(self.view.bounds.size.width, 0)];
-        _clipConfirmView.layer.shadowPath = path.CGPath;
-        _clipConfirmView.layer.shadowOpacity = 0.7;
-        
-        [self.view addSubview:_clipConfirmView];
-    }
-    return _clipConfirmView;
-}
-
 
 @end
