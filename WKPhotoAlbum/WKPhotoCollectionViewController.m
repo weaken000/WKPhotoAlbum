@@ -11,10 +11,13 @@
 #import "WKPhotoAlbumViewController.h"
 
 #import "WKPhotoCollectionCell.h"
+#import "WKPhotoCollectBottomView.h"
+#import "WKPhotoAlbumNormalNaviBar.h"
+
 #import "WKPhotoAlbumUtils.h"
-
 #import "WKPhotoAlbumConfig.h"
-
+#import "WKPhotoAlbumModel.h"
+#import "WKPhotoAlbumCollectManager.h"
 
 @interface WKPhotoAlbumAuthorizationView : UIView
 
@@ -102,40 +105,68 @@
 @end
 
 
-@interface WKPhotoCollectionViewController ()<UICollectionViewDelegate, UICollectionViewDataSource, WKPhotoCollectionCellDelegate>
+@interface WKPhotoCollectionViewController ()<UICollectionViewDelegate, UICollectionViewDataSource, WKPhotoCollectionCellDelegate, WKPhotoCollectBottomViewDelegate>
 
 @property (nonatomic, strong) UICollectionView *collectionView;
-//图片缓存
-@property (nonatomic, strong) PHCachingImageManager *imageManager;
 
 @property (nonatomic, strong) WKPhotoAlbumAuthorizationView *authorizationView;
+
+@property (nonatomic, strong) WKPhotoCollectBottomView *actionView;
+
+@property (nonatomic, strong) WKPhotoAlbumCollectManager *manager;
+
+@property (nonatomic, strong) WKPhotoAlbumNormalNaviBar *navigationView;
 
 @end
 
 @implementation WKPhotoCollectionViewController {
-    NSMutableArray<PHAsset *> *_asset;
-    PHImageRequestOptions     *_reqeustOptions;
-    CGRect                    _previousPreheatRect;
-    CGSize                    _thumSize;
-    
-    NSMutableArray            *_selectIndexArr;
-    UIButton                  *_rightNaviItem;
     NSInteger                 _maxCount;
     PHAuthorizationStatus     _photoAuthorization;
 }
 
+#pragma mark - life circle
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor whiteColor];
     
-    [self installNavi];
+    self.view.backgroundColor = [UIColor whiteColor];
+    self.extendedLayoutIncludesOpaqueBars = YES;
+
+    self.navigationView.hidden = NO;
     [self setupFromVC];
     [self requestAuthorization];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:YES animated:animated];
+}
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [self.navigationController setNavigationBarHidden:NO animated:animated];
+}
+
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
+    
+    CGFloat actionH = kActionViewActionHeight;
+    CGFloat topInsetH = [UIApplication sharedApplication].statusBarFrame.size.height + 44.0;
+    if (@available(iOS 11.0, *)) {
+        actionH += self.view.safeAreaInsets.bottom;
+    }
     _collectionView.frame = self.view.bounds;
+    _collectionView.contentInset = UIEdgeInsetsMake(topInsetH, 0, actionH, 0);
+    _actionView.frame = CGRectMake(0, self.view.frame.size.height - actionH, self.view.frame.size.width, actionH);
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    if (self.manager.reqeustImageSize.width != 0) {
+        CGFloat numberOfLine = 4;
+        CGFloat itemMargin = 1.0;
+        CGFloat itemW = (self.view.bounds.size.width - (numberOfLine + 1) * itemMargin - 1) / numberOfLine;
+        _manager.reqeustImageSize = CGSizeMake(itemW * [UIScreen mainScreen].scale,
+                                               itemW * [UIScreen mainScreen].scale);
+    }
 }
 
 #pragma mark -
@@ -143,9 +174,8 @@
     PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
     _photoAuthorization = status;
     if (status == PHAuthorizationStatusAuthorized) {//已获得权限
-        [self installProperty];
+        [self installManager];
         [self insertPhotoAlbumVC];
-        [self setupManager];
         [self setupSubviews];
     } else {
         [self.authorizationView configAuthStatus:status];
@@ -160,27 +190,6 @@
         }
     }
     [WKPhotoAlbumConfig sharedConfig].fromVC = self.navigationController.childViewControllers[self.navigationController.childViewControllers.count - 2];
-}
-
-- (void)installNavi {
-    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-    UIButton *backButton = [[UIButton alloc] init];
-    [backButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
-    UIView *backView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 44, 44)];
-    [backView addSubview:backButton];
-    backButton.frame = CGRectMake(0, 10, 14.4, 24);
-    [backButton addTarget:self action:@selector(click_backButton) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backView];
-
-    _rightNaviItem = [[UIButton alloc] init];
-    _rightNaviItem.frame = CGRectMake(0, 0, 50, 44);
-    _rightNaviItem.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
-    [_rightNaviItem setTitle:@"选择" forState:UIControlStateNormal];
-    [_rightNaviItem setTitleColor:config.naviTitleColor forState:UIControlStateNormal];
-    _rightNaviItem.titleLabel.font = config.naviItemFont;
-    [_rightNaviItem addTarget:self action:@selector(click_naviRight) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:_rightNaviItem];
-    _rightNaviItem.hidden = YES;
 }
 
 #pragma mark -
@@ -198,33 +207,28 @@
     [WKPhotoAlbumConfig sharedConfig].fromVC = childVCs[childVCs.count - 3];
 }
 
-- (void)installProperty {
+- (void)installManager {
     
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
+    NSArray<PHAsset *> *asset;
     //获取资源
     if (self.assetDict) {
         PHAssetCollection *collection = self.assetDict[@"collection"];
-        self.navigationItem.title = collection.localizedTitle?:@"照片";
-        _asset = self.assetDict[@"asset"];
+        self.navigationView.title = collection.localizedTitle?:@"照片";
+        asset = self.assetDict[@"asset"];
     } else {
-        self.navigationItem.title = @"所有照片";
-        //相机胶卷
-        _asset = [WKPhotoAlbumUtils readSmartAlbumInConfig];
+        self.navigationView.title = @"所有照片";
     }
-    _selectIndexArr = [NSMutableArray array];
+    _manager = [[WKPhotoAlbumCollectManager alloc] initWithAssets:asset];
+    PHImageRequestOptions *reqeustOptions = [[PHImageRequestOptions alloc] init];
+    reqeustOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
+    reqeustOptions.synchronous = NO;
+    _manager.reqeustImageOptions = reqeustOptions;
+    [_manager.cacheManager stopCachingImagesForAllAssets];
+
     _maxCount = config.maxSelectCount;
 }
 
-- (void)setupManager {
-    _previousPreheatRect = CGRectZero;
-    
-    _imageManager = [[PHCachingImageManager alloc] init];
-    [_imageManager stopCachingImagesForAllAssets];
-    
-    _reqeustOptions = [[PHImageRequestOptions alloc] init];
-    _reqeustOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
-    _reqeustOptions.synchronous = NO;
-}
 
 - (void)setupSubviews {
     CGFloat numberOfLine = 4;
@@ -236,65 +240,29 @@
     layout.minimumLineSpacing = itemMargin;
     layout.minimumInteritemSpacing = itemMargin;
     
-    _thumSize = CGSizeMake(itemW * [UIScreen mainScreen].scale, itemW * [UIScreen mainScreen].scale);
-    
-    _collectionView = [[UICollectionView alloc] initWithFrame:self.view.bounds collectionViewLayout:layout];
+    _manager.reqeustImageSize = CGSizeMake(itemW * [UIScreen mainScreen].scale,
+                                           itemW * [UIScreen mainScreen].scale);
+    _collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
     _collectionView.delegate = self;
     _collectionView.dataSource = self;
     [_collectionView registerClass:[WKPhotoCollectionCell class] forCellWithReuseIdentifier:@"photoCell"];
     _collectionView.backgroundColor = [UIColor whiteColor];
-    [self.view addSubview:_collectionView];
-}
-
-- (void)click_naviRight {
-    
-    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-    NSMutableArray *results = [NSMutableArray arrayWithCapacity:_selectIndexArr.count];
-    
-    __block NSInteger totalCount = _selectIndexArr.count;
-    __block NSInteger successCount = 0;
-    
-    for (NSNumber *index in _selectIndexArr) {
-        PHAsset *asset = _asset[index.integerValue];
-        if (asset.mediaType == PHAssetMediaTypeImage) {
-            PHImageRequestOptions *option = [[PHImageRequestOptions alloc] init];
-            option.deliveryMode = config.imageDeliveryMode;
-            option.synchronous = NO;
-            CGFloat width = [UIScreen mainScreen].bounds.size.width * [UIScreen mainScreen].scale;
-            [_imageManager requestImageForAsset:asset targetSize:CGSizeMake(width, width) contentMode:PHImageContentModeAspectFill options:option resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (result) {
-                        successCount += 1;
-                        [results addObject:result];
-                    } else {
-                        totalCount -= 1;
-                    }
-                    if (successCount == totalCount) {
-                        [self callBackWithResults:results];
-                    }
-                });
-            }];
-        } else if (asset.mediaType == PHAssetMediaTypeVideo) {
-            PHVideoRequestOptions *option = [[PHVideoRequestOptions alloc] init];
-            option.deliveryMode = config.videoDeliveryMode;
-            [_imageManager requestAVAssetForVideo:asset options:option resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    NSURL *url = [asset valueForKey:@"URL"];
-                    if (url) {
-                        successCount += 1;
-                        [results addObject:url];
-                    } else {
-                        totalCount -= 1;
-                    }
-                    if (successCount == totalCount) {
-                        [self callBackWithResults:results];
-                    }
-                });
-            }];
-        }
+    _collectionView.showsVerticalScrollIndicator = NO;
+    if (@available(iOS 11.0, *)) {
+        _collectionView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    } else {
+        self.automaticallyAdjustsScrollViewInsets = NO;
     }
+    [self.view addSubview:_collectionView];
+    
+    _actionView = [[WKPhotoCollectBottomView alloc] initWithFrame:CGRectZero useForCollectVC:YES];
+    _actionView.delegate = self;
+    [self.view addSubview:_actionView];
+    
+    [self.view bringSubviewToFront:self.navigationView];
 }
 
+#pragma mark - action
 - (void)callBackWithResults:(NSArray *)results {
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
     
@@ -314,54 +282,157 @@
 
 - (void)click_backButton {
     if (_photoAuthorization != PHAuthorizationStatusAuthorized) {
-        WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-        if ([config.delegate respondsToSelector:@selector(photoAlbumCancelSelect)]) {
-            [config.delegate photoAlbumCancelSelect];
-        }
-        if (config.cancelBlock) {
-            config.cancelBlock();
-        }
-        if (config.fromVC) {
-            [self.navigationController popToViewController:config.fromVC animated:YES];
-        } else {
-            [self.navigationController dismissViewControllerAnimated:YES completion:nil];
-        }
-        [WKPhotoAlbumConfig clearReback];
+        [self click_cancelButton];
     } else {
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
 
+- (void)click_cancelButton {
+    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
+    if ([config.delegate respondsToSelector:@selector(photoAlbumCancelSelect)]) {
+        [config.delegate photoAlbumCancelSelect];
+    }
+    if (config.cancelBlock) {
+        config.cancelBlock();
+    }
+    if (config.fromVC) {
+        [self.navigationController popToViewController:config.fromVC animated:YES];
+    } else {
+        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+    }
+    [WKPhotoAlbumConfig clearReback];
+}
+
+- (void)pushToPreviewWithIndexPath:(NSIndexPath *)indexPath {
+    if (!indexPath) {
+        indexPath = [NSIndexPath indexPathForRow:self.manager.selectIndexArray.firstObject.integerValue inSection:0];
+    }
+    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
+    if (model.asset.mediaType == PHAssetMediaTypeAudio) {
+     
+        return;
+    }
+    
+    __block WKPhotoPreviewViewController *next = [[WKPhotoPreviewViewController alloc] init];
+    self.manager.previewFromIndex = indexPath.row;
+    next.manager = self.manager;
+    self.navigationController.delegate = next;
+    PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
+    options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+    [self.manager.cacheManager requestImageForAsset:model.asset targetSize:[next targetSize] contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        if (result) {
+            next.coverImage = result;
+            self.selectCell.hidden = YES;
+            UIGraphicsBeginImageContext(self.view.bounds.size);
+            CGContextRef context = UIGraphicsGetCurrentContext();
+            [self.view.layer renderInContext:context];
+            UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+            next.screenShotImage = image;
+            [self.navigationController pushViewController:next animated:YES];
+        } else {
+            self.navigationController.delegate = nil;
+            next = nil;
+        }
+    }];
+}
+
+#pragma mark - WKPhotoCollectBottomViewDelegate
+- (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
+    
+    _selectCell = nil;
+    CGRect visiableRect = CGRectMake(0, self.collectionView.contentOffset.y + self.collectionView.contentInset.top, self.collectionView.frame.size.width, self.collectionView.frame.size.height - self.collectionView.contentInset.bottom - self.collectionView.contentInset.top);
+    NSArray<UICollectionViewLayoutAttributes *> *layoutAttributes = [self.collectionView.collectionViewLayout layoutAttributesForElementsInRect:visiableRect];
+    
+    for (NSNumber *index in self.manager.selectIndexArray) {
+        if (index.integerValue < layoutAttributes.firstObject.indexPath.row || index.integerValue > layoutAttributes.lastObject.indexPath.row) {
+            continue;
+        }
+        _selectCell = (WKPhotoCollectionCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index.integerValue inSection:0]];
+        self.manager.previewFromIndex = index.integerValue;
+        break;
+    }
+    
+    if (!_selectCell) {
+        _selectCell = (WKPhotoCollectionCell *)[self.collectionView cellForItemAtIndexPath:layoutAttributes.firstObject.indexPath];
+        self.manager.previewFromIndex = layoutAttributes.firstObject.indexPath.row;
+    }
+    [self pushToPreviewWithIndexPath:[NSIndexPath indexPathForRow:self.manager.previewFromIndex inSection:0]];
+}
+- (void)actionViewDidClickUseOrigin:(WKPhotoCollectBottomView *)actionView useOrigin:(BOOL)useOrigin {
+    self.manager.isUseOrigin = useOrigin;
+    [actionView configUseOrigin:self.manager.isUseOrigin];
+}
+- (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView {
+    //    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
+    //    NSMutableArray *results = [NSMutableArray arrayWithCapacity:_selectIndexArr.count];
+    //
+    //    __block NSInteger totalCount = _selectIndexArr.count;
+    //    __block NSInteger successCount = 0;
+    //
+    //    for (NSNumber *index in _selectIndexArr) {
+    //        PHAsset *asset = _asset[index.integerValue];
+    //        if (asset.mediaType == PHAssetMediaTypeImage) {
+    //            PHImageRequestOptions *option = [[PHImageRequestOptions alloc] init];
+    //            option.deliveryMode = config.imageDeliveryMode;
+    //            option.synchronous = NO;
+    //            CGFloat width = [UIScreen mainScreen].bounds.size.width * [UIScreen mainScreen].scale;
+    //            [_imageManager requestImageForAsset:asset targetSize:CGSizeMake(width, width) contentMode:PHImageContentModeAspectFill options:option resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+    //                dispatch_async(dispatch_get_main_queue(), ^{
+    //                    if (result) {
+    //                        successCount += 1;
+    //                        [results addObject:result];
+    //                    } else {
+    //                        totalCount -= 1;
+    //                    }
+    //                    if (successCount == totalCount) {
+    //                        [self callBackWithResults:results];
+    //                    }
+    //                });
+    //            }];
+    //        } else if (asset.mediaType == PHAssetMediaTypeVideo) {
+    //            PHVideoRequestOptions *option = [[PHVideoRequestOptions alloc] init];
+    //            option.deliveryMode = config.videoDeliveryMode;
+    //            [_imageManager requestAVAssetForVideo:asset options:option resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+    //                dispatch_async(dispatch_get_main_queue(), ^{
+    //                    NSURL *url = [asset valueForKey:@"URL"];
+    //                    if (url) {
+    //                        successCount += 1;
+    //                        [results addObject:url];
+    //                    } else {
+    //                        totalCount -= 1;
+    //                    }
+    //                    if (successCount == totalCount) {
+    //                        [self callBackWithResults:results];
+    //                    }
+    //                });
+    //            }];
+    //        }
+    //    }
+}
+
 #pragma mark - UICollectionViewDataSource
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return _asset.count;
+    return self.manager.allPhotoArray.count;
 }
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     WKPhotoCollectionCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"photoCell" forIndexPath:indexPath];
-    PHAsset *asset = [_asset objectAtIndex:indexPath.row];
-    cell.assetIdentifier = asset.localIdentifier;
+    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
+    cell.assetIdentifier = model.asset.localIdentifier;
     cell.delegate = self;
-    BOOL contains = [_selectIndexArr containsObject:@(indexPath.row)];
-    cell.photoSelect = contains;
-    if (contains) {
-        NSInteger index = [_selectIndexArr indexOfObject:@(indexPath.row)];
-        cell.selectIndex = index + 1;
-    } else {
-        cell.selectIndex = 0;
-    }
+    cell.selectIndex = model.selectIndex;
     
-    [_imageManager requestImageForAsset:asset targetSize:_thumSize contentMode:PHImageContentModeAspectFit options:_reqeustOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (result) {
-                if ([cell.assetIdentifier isEqualToString:asset.localIdentifier]) {
-                    cell.thumImage = result;
-                } else {
-                    cell.thumImage = nil;
-                }
+    [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        if (result) {
+            if ([cell.assetIdentifier isEqualToString:model.asset.localIdentifier]) {
+                cell.thumImage = result;
             } else {
                 cell.thumImage = nil;
             }
-        });
+        } else {
+            cell.thumImage = nil;
+        }
     }];
     return cell;
 }
@@ -369,61 +440,7 @@
 #pragma mark - UICollectionViewDelegate
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     _selectCell = [collectionView cellForItemAtIndexPath:indexPath];
-    PHAsset *asset = [_asset objectAtIndex:indexPath.row];
-    if (asset.mediaType == PHAssetMediaTypeAudio) return;
-    
-    __block WKPhotoPreviewViewController *next = [WKPhotoPreviewViewController new];
-    next.previewAsset = asset;
-    self.navigationController.delegate = next;
-    PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
-    options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
-    [_imageManager requestImageForAsset:asset targetSize:[next targetSize] contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if (result) {
-            if (asset.mediaType == PHAssetMediaTypeImage) {
-                next.coverImage = result;
-                self.selectCell.hidden = YES;
-                
-                UIGraphicsBeginImageContext(self.view.bounds.size);
-                CGContextRef context = UIGraphicsGetCurrentContext();
-                [self.view.layer renderInContext:context];
-                UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-                UIGraphicsEndImageContext();
-                next.screenShotImage = image;
-                
-                [self.navigationController pushViewController:next animated:YES];
-            } else {
-                PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
-                options.networkAccessAllowed = NO;
-                options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
-                [_imageManager requestPlayerItemForVideo:asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        if (playerItem) {
-                            
-                            next.playerItem = playerItem;
-                            next.coverImage = result;
-                            self.selectCell.hidden = YES;
-                            
-                            UIGraphicsBeginImageContext(self.view.bounds.size);
-                            CGContextRef context = UIGraphicsGetCurrentContext();
-                            [self.view.layer renderInContext:context];
-                            UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-                            UIGraphicsEndImageContext();
-                            next.screenShotImage = image;
-                            
-                            [self.navigationController pushViewController:next animated:YES];
-                        } else {
-                            self.navigationController.delegate = nil;
-                            next = nil;
-                        }
-                    });
-                }];
-            }
-        } else {
-            self.navigationController.delegate = nil;
-            next = nil;
-        }
-    }];
-    
+    [self pushToPreviewWithIndexPath:indexPath];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -436,83 +453,32 @@
     if (!indexPath) return NO;
     
     if (select) {//选中
-        if (_selectIndexArr.count == _maxCount) {
-            NSIndexPath *removeIndexPath = [NSIndexPath indexPathForRow:[_selectIndexArr.firstObject integerValue] inSection:0];
-            WKPhotoCollectionCell *cell = (WKPhotoCollectionCell *)[self.collectionView cellForItemAtIndexPath:removeIndexPath];
-            cell.photoSelect = NO;
-            [_selectIndexArr removeObjectAtIndex:0];
+        NSIndexPath *cancelIndex = [self.manager addSelectWithIndex:indexPath.row];
+        if (cancelIndex) {
+            WKPhotoCollectionCell *cell = (WKPhotoCollectionCell *)[self.collectionView cellForItemAtIndexPath:cancelIndex];
+            cell.selectIndex = 0;
         }
-        [_selectIndexArr addObject:@(indexPath.row)];
-        NSInteger index = [_selectIndexArr indexOfObject:@(indexPath.row)];
-        photoCell.selectIndex = index + 1;
     } else {//取消选中
-        [_selectIndexArr removeObject:@(indexPath.row)];
-        photoCell.selectIndex = 0;
+        [self.manager cancelSelectIndex:indexPath.row];
+        if (![self.manager.selectIndexArray containsObject:@(indexPath.row)]) {
+            photoCell.selectIndex = 0;
+        }
     }
-    _rightNaviItem.hidden = (_selectIndexArr.count == 0);
+    
+    for (NSNumber *selectIndex in self.manager.selectIndexArray) {
+        NSIndexPath *selectIndexPath = [NSIndexPath indexPathForRow:selectIndex.integerValue inSection:0];
+        WKPhotoCollectionCell *cell = (WKPhotoCollectionCell *)[self.collectionView cellForItemAtIndexPath:selectIndexPath];
+        cell.selectIndex = self.manager.allPhotoArray[selectIndexPath.row].selectIndex;
+    }
+    
+    [self.actionView configSelectCount:self.manager.selectIndexArray.count];
     return YES;
 }
 
 #pragma mark - Update Assets
 - (void)updateAssets {
-    CGRect visiableRect = CGRectMake(0, self.collectionView.contentOffset.y, self.collectionView.bounds.size.width, self.collectionView.bounds.size.height);
-    CGRect preheatRect = CGRectInset(visiableRect, 0, -0.5 * visiableRect.size.height);
-    
-    CGFloat delta = fabs(CGRectGetMidY(preheatRect) - CGRectGetMidY(_previousPreheatRect));
-    if (delta <= self.view.bounds.size.height / 3) return;
-    
-    CGRect addRect = CGRectZero;
-    CGRect removedRect = CGRectZero;
-    if (CGRectIntersectsRect(_previousPreheatRect, preheatRect)) {//可见区域有重叠
-        if (CGRectGetMaxY(preheatRect) > CGRectGetMaxY(_previousPreheatRect)) {//向下滑动
-            addRect = CGRectMake(preheatRect.origin.x,
-                                 CGRectGetMaxY(_previousPreheatRect),
-                                 preheatRect.size.width,
-                                 CGRectGetMaxY(preheatRect) - CGRectGetMaxY(_previousPreheatRect));
-            if (_previousPreheatRect.origin.y < preheatRect.origin.y) {
-                removedRect = CGRectMake(_previousPreheatRect.origin.x, _previousPreheatRect.origin.y, preheatRect.size.width, preheatRect.origin.y - _previousPreheatRect.origin.y);
-            }
-        }
-        
-        if (CGRectGetMaxY(preheatRect) < CGRectGetMaxY(_previousPreheatRect)) {//向上滑动
-            removedRect = CGRectMake(preheatRect.origin.x,
-                                     CGRectGetMaxY(preheatRect),
-                                     preheatRect.size.width,
-                                     CGRectGetMaxY(_previousPreheatRect) - CGRectGetMaxY(preheatRect));
-            if (_previousPreheatRect.origin.y > preheatRect.origin.y) {
-                addRect = CGRectMake(preheatRect.origin.x, preheatRect.origin.y, preheatRect.size.width, _previousPreheatRect.origin.y - preheatRect.origin.y);
-            }
-        }
-    } else {//当前可见区域与之前的可见区域不重叠，则直接停止缓存之前的可见区域，开始缓存当前的可见区域
-        addRect = preheatRect;
-        removedRect = _previousPreheatRect;
-    }
-    
-    NSArray *addIndexPaths    = [self indexPathForElementsInRect:addRect];
-    NSArray *removeIndexPaths = [self indexPathForElementsInRect:removedRect];
-    NSMutableArray *addAssets = [NSMutableArray array];
-    for (NSIndexPath *index in addIndexPaths) {
-        [addAssets addObject:[_asset objectAtIndex:index.row]];
-    }
-    NSMutableArray *removeAssets = [NSMutableArray array];
-    for (NSIndexPath *index in removeIndexPaths) {
-        [removeAssets addObject:[_asset objectAtIndex:index.row]];
-    }
-    
-    [_imageManager startCachingImagesForAssets:addAssets targetSize:_thumSize contentMode:PHImageContentModeAspectFit options:_reqeustOptions];
-    [_imageManager stopCachingImagesForAssets:removeAssets targetSize:_thumSize contentMode:PHImageContentModeAspectFit options:_reqeustOptions];
-    
-    _previousPreheatRect = preheatRect;
-}
-
-- (NSMutableArray *)indexPathForElementsInRect:(CGRect)rect {
-    NSArray *layoutAttributes = [self.collectionView.collectionViewLayout layoutAttributesForElementsInRect:rect];
-    if (!layoutAttributes.count) return nil;
-    NSMutableArray *indexPaths = [NSMutableArray array];
-    for (UICollectionViewLayoutAttributes *att in layoutAttributes) {
-        [indexPaths addObject:att.indexPath];
-    }
-    return indexPaths;
+    [self.manager updateCacheForCollectionView:self.collectionView
+                                    withOffset:CGPointMake(0, -0.5 * self.collectionView.bounds.size.height)];
 }
 
 - (WKPhotoAlbumAuthorizationView *)authorizationView {
@@ -536,9 +502,8 @@
                 dispatch_async(dispatch_get_main_queue(), ^{
                     __strong typeof(weakSelf) strongSelf = weakSelf;
                     if (status == PHAuthorizationStatusAuthorized) {
-                        [strongSelf installProperty];
+                        [strongSelf installManager];
                         [strongSelf insertPhotoAlbumVC];
-                        [strongSelf setupManager];
                         [strongSelf setupSubviews];
                     }
                     [strongSelf.authorizationView configAuthStatus:status];
@@ -550,5 +515,12 @@
     return _authorizationView;
 }
 
+- (WKPhotoAlbumNormalNaviBar *)navigationView {
+    if (!_navigationView) {
+        _navigationView = [[WKPhotoAlbumNormalNaviBar alloc] initWithTarget:self popAction:@selector(click_backButton) cancelAction:@selector(click_cancelButton)];
+        [self.view addSubview:_navigationView];
+    }
+    return _navigationView;
+}
 
 @end

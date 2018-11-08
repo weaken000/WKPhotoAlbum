@@ -16,7 +16,7 @@
     dispatch_once(&onceToken, ^{
         config = [[WKPhotoAlbumConfig alloc] init];
         config.naviBarTintColor = [UIColor whiteColor];
-        config.naviTitleColor = [UIColor blackColor];
+        config.naviTitleColor = [UIColor whiteColor];
         config.naviTitleFont = [UIFont systemFontOfSize:20];
         config.naviItemFont = [UIFont systemFontOfSize:16];
         config.isIncludeAudio = NO;

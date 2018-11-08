@@ -22,6 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSMutableArray<PHAsset *> *)readSmartAlbumInConfig;
 
++ (UIColor *)r:(CGFloat)r g:(CGFloat)g b:(CGFloat)b a:(CGFloat)a;
+
++ (UIImage *)createImageWithColor:(UIColor *)color;
 
 @end
 

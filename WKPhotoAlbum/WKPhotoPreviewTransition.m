@@ -43,16 +43,16 @@
     toVC.view.backgroundColor = [UIColor whiteColor];
     [contrainer addSubview:toVC.view];
     
+    //selectCell shot
     CGRect cellRect = [fromVC.selectCell.superview convertRect:fromVC.selectCell.frame toView:contrainer];
     UIImageView *imageView = [[UIImageView alloc] init];
-    imageView.contentMode = UIViewContentModeScaleAspectFill;
+    imageView.contentMode  = UIViewContentModeScaleAspectFill;
+    imageView.frame        = cellRect;
+    UIImage *coverImage    = toVC.coverImage;
+    imageView.image        = coverImage;
     [contrainer addSubview:imageView];
-    imageView.frame    = cellRect;
-    UIImage *coverImage = toVC.coverImage;
-    imageView.image    = coverImage;
     
-    CGRect imageFrame = [toVC imageFrameToWindow];
-    CGRect realToRect = [self transitionRectByImage:coverImage imageFrame:imageFrame];
+    CGRect realToRect = [self transitionRectByImage:coverImage imageFrame:[UIScreen mainScreen].bounds];
 
     toVC.view.alpha = 0.0;
     fromVC.selectCell.hidden = YES;
@@ -85,8 +85,9 @@
     imageView.contentMode  = UIViewContentModeScaleAspectFill;
     [contrainer addSubview:imageView];
     
-    imageView.frame = [fromVC.previewImageView.superview convertRect:fromVC.previewImageView.frame toView:contrainer];
-    fromVC.previewImageView.hidden = YES;
+//    imageView.frame = [fromVC.previewImageView.superview convertRect:fromVC.previewImageView.frame toView:contrainer];
+//    fromVC.previewImageView.hidden = YES;
+    imageView.frame = contrainer.bounds;
     
     CGRect cellRect = [toVC.selectCell.superview convertRect:toVC.selectCell.frame toView:contrainer];
     [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{
@@ -100,7 +101,7 @@
 }
 
 - (CGRect)transitionRectByImage:(UIImage *)image imageFrame:(CGRect)imageFrame {
-    CGFloat scale = MIN(imageFrame.size.width / image.size.width, imageFrame.size.height / image.size.height);
+    CGFloat scale = imageFrame.size.width / image.size.width;
     CGFloat w = scale * image.size.width;
     CGFloat h = scale * image.size.height;
     return CGRectMake(imageFrame.origin.x + (imageFrame.size.width - w) * 0.5, imageFrame.origin.y + (imageFrame.size.height - h) * 0.5, w, h);

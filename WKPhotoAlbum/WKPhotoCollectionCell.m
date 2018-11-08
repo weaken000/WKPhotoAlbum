@@ -7,14 +7,13 @@
 //
 
 #import "WKPhotoCollectionCell.h"
+#import "WKPhotoAlbumSelectButton.h"
 
 @interface WKPhotoCollectionCell()
 
 @property (nonatomic, strong) UIImageView *imageView;
 
-@property (nonatomic, strong) UIButton *selectButton;
-
-@property (nonatomic, strong) UILabel *selectNumLabel;
+@property (nonatomic, strong) WKPhotoAlbumSelectButton *selectButton;
 
 @end
 
@@ -33,29 +32,18 @@
     _imageView.layer.masksToBounds = YES;
     [self.contentView addSubview:_imageView];
     
-    _selectButton = [[UIButton alloc] init];
-    [_selectButton setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateNormal];
-    [_selectButton setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateHighlighted];
+    _selectButton = [[WKPhotoAlbumSelectButton alloc] init];
     [_selectButton addTarget:self action:@selector(click_selectButton) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:_selectButton];
 }
 
 - (void)click_selectButton {
     if ([self.delegate respondsToSelector:@selector(photoCollectionCell:didChangeToSelect:)]) {
-        BOOL success = [self.delegate photoCollectionCell:self didChangeToSelect:!self.isPhotoSelect];
+        BOOL isSelect = self.selectButton.selectIndex > 0;
+        BOOL success = [self.delegate photoCollectionCell:self didChangeToSelect:!isSelect];
         if (success) {
-            self.photoSelect = !self.isPhotoSelect;
-            if (self.isPhotoSelect) {
-                NSValue *startValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
-                NSValue *overValue  = [NSValue valueWithCATransform3D:CATransform3DMakeScale(1.2, 1.2, 1.0)];
-                NSValue *thinValue  = [NSValue valueWithCATransform3D:CATransform3DMakeScale(0.80, 0.80, 1.0)];
-                NSValue *endValue   = [NSValue valueWithCATransform3D:CATransform3DIdentity];
-                CAKeyframeAnimation *scaleAnim = [CAKeyframeAnimation animationWithKeyPath:@"transform"];
-                scaleAnim.values = @[startValue, overValue, thinValue, endValue];
-                scaleAnim.keyTimes = @[@(0.f), @(0.5f), @(0.9f), @(1.0f)];
-                scaleAnim.duration = 0.4;
-                scaleAnim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-                [self.selectButton.layer addAnimation:scaleAnim forKey:nil];
+            if (self.selectButton.selectIndex > 0) {
+                [self.selectButton showAnimation];
             }
         }
     }
@@ -71,36 +59,9 @@
     _thumImage = thumImage;
     self.imageView.image = thumImage;
 }
-- (void)setPhotoSelect:(BOOL)photoSelect {
-    _photoSelect = photoSelect;
-    if (photoSelect) {
-        self.selectNumLabel.hidden = NO;
-    } else {
-        _selectNumLabel.hidden = YES;
-    }
-}
 
 - (void)setSelectIndex:(NSInteger)selectIndex {
-    if (selectIndex <= 0) {
-        return;
-    }
-    self.selectNumLabel.text = [NSString stringWithFormat:@"%zd", selectIndex];
-}
-
-- (UILabel *)selectNumLabel {
-    if (!_selectNumLabel) {
-        _selectNumLabel = [[UILabel alloc] init];
-        _selectNumLabel.textColor = [UIColor whiteColor];
-        _selectNumLabel.font = [UIFont systemFontOfSize:13];
-        _selectNumLabel.backgroundColor = [UIColor greenColor];
-        _selectNumLabel.textAlignment = NSTextAlignmentCenter;
-        
-        _selectNumLabel.frame = CGRectMake(0, 0, 25, 25);
-        _selectNumLabel.layer.cornerRadius = 12.5;
-        _selectNumLabel.layer.masksToBounds = YES;
-        [_selectButton addSubview:_selectNumLabel];
-    }
-    return _selectNumLabel;
+    self.selectButton.selectIndex = selectIndex;
 }
 
 @end

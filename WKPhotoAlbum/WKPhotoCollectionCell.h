@@ -23,8 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy  ) NSString *assetIdentifier;
 
-@property (nonatomic, assign, getter=isPhotoSelect) BOOL photoSelect;
-
 @property (nonatomic, strong, nullable) UIImage  *thumImage;
 
 @property (nonatomic, assign) NSInteger selectIndex;
