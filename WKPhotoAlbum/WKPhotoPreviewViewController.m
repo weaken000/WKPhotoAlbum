@@ -120,7 +120,6 @@ WKPhotoCollectBottomViewDelegate
     [self.previewCollectionView addGestureRecognizer:_dismissPanGesture];
     [_previewCollectionView.panGestureRecognizer requireGestureRecognizerToFail:_dismissPanGesture];
     
-    
 //    if (_previewAsset.mediaType != PHAssetMediaTypeImage) {//非图片预览模式
 //        _videoPlayer      = [AVPlayer playerWithPlayerItem:_playerItem];
 //        _videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:_videoPlayer];
@@ -167,9 +166,6 @@ WKPhotoCollectBottomViewDelegate
     if (self.navigationView.isInEditMode) {
         [self.navigationView toEditMode:NO];
     } else {
-        NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.frame.size.width;
-        WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
-        self.coverImage = cell.image;
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
@@ -224,6 +220,16 @@ WKPhotoCollectBottomViewDelegate
     }];
     return cell;
 }
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    if (self.navigationView.alpha == 0.0) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hiddenBar) object:nil];
+        [self performSelector:@selector(showBar) withObject:nil afterDelay:0.5];
+    } else {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showBar) object:nil];
+        [self performSelector:@selector(hiddenBar) withObject:nil afterDelay:0.5];
+    }
+}
+
 #pragma mark - UIScrollViewDelegate
 - (void)setNavigationBarSelectIndex {
     if (self.previewCollectionView.bounds.size.width == 0) return;
@@ -241,6 +247,20 @@ WKPhotoCollectBottomViewDelegate
 }
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
+}
+
+#pragma mark - Config
+- (void)showBar {
+    [UIView animateWithDuration:0.6 animations:^{
+        self.navigationView.alpha = 1.0;
+        self.actionView.alpha = 1.0;
+    }];
+}
+- (void)hiddenBar {
+    [UIView animateWithDuration:0.6 animations:^{
+        self.navigationView.alpha = 0.0;
+        self.actionView.alpha = 0.0;
+    }];
 }
 
 
@@ -299,6 +319,15 @@ WKPhotoCollectBottomViewDelegate
                       ([UIScreen mainScreen].bounds.size.height * scale));
 }
 
+- (CGRect)dismissRect {
+    if (_dismissPreViewImageView && !_dismissPreViewImageView.isHidden) {
+        return [_dismissPreViewImageView.superview convertRect:_dismissPreViewImageView.frame toView:self.view];
+    } else {
+        WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+        return [cell.imageView.superview convertRect:cell.imageView.frame toView:self.view];
+    }
+}
+
 
 
 - (void)clipImage {
@@ -342,13 +371,19 @@ WKPhotoCollectBottomViewDelegate
             
             if (!_dismissPreViewImageView) {
                 _dismissPreViewImageView = [[UIImageView alloc] init];
-                [self.view addSubview:_dismissPreViewImageView];
+                [self.view insertSubview:_dismissPreViewImageView belowSubview:self.navigationView];
             }
             _dismissPreViewImageView.image = cell.image;
             CGRect imageFrame = [cell.imageView.superview convertRect:cell.imageView.frame toView:self.view];
             _dismissPreViewImageView.frame = imageFrame;
             _dismissPreViewImageView.hidden = NO;
             cell.hidden = YES;
+            
+            [UIView animateWithDuration:0.6 animations:^{
+                self.navigationView.alpha = 0.0;
+                self.actionView.alpha = 0.0;
+            }];
+            
             break;
         }
         case UIGestureRecognizerStateChanged: {
@@ -374,23 +409,21 @@ WKPhotoCollectBottomViewDelegate
             break;
         case UIGestureRecognizerStateEnded:
         case UIGestureRecognizerStateCancelled: {
-            __block BOOL isPop = NO;
-            [UIView animateWithDuration:0.2 animations:^{
-                if (self.dismissPreViewImageView.transform.a <= 0.6) {
-                    isPop = YES;
-                    [self.navigationController popViewControllerAnimated:YES];
-                } else {
+            if (self.dismissPreViewImageView.transform.a <= 0.6) {
+                [self.navigationController popViewControllerAnimated:YES];
+            } else {
+                [UIView animateWithDuration:0.2 animations:^{
                     self.dismissPreViewImageView.transform = CGAffineTransformIdentity;
                     self.dismissPreViewImageView.center = self.view.center;
                     self.previewCollectionView.backgroundColor = [UIColor blackColor];
-                }
-            } completion:^(BOOL finished) {
-                if (!isPop) {
+                    self.navigationView.alpha = 1.0;
+                    self.actionView.alpha = 1.0;
+                } completion:^(BOOL finished) {
                     WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
                     cell.hidden = NO;
                     self.dismissPreViewImageView.hidden = YES;
-                }
-            }];
+                }];
+            }
             break;
         }
         default:

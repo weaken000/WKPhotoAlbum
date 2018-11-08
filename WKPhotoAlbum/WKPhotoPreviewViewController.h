@@ -13,8 +13,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface WKPhotoPreviewViewController : UIViewController<UINavigationControllerDelegate>
-//大图
-@property (nonatomic, strong) UIImage *coverImage;
 //图片列表的截图
 @property (nonatomic, strong) UIImage *screenShotImage;
 //截图展示
@@ -25,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) WKPhotoAlbumCollectManager *manager;
 
 - (CGSize)targetSize;
+
+- (CGRect)dismissRect;
 
 @end
 

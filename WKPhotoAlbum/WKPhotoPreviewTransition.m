@@ -11,6 +11,8 @@
 #import "WKPhotoCollectionViewController.h"
 #import "WKPhotoPreviewViewController.h"
 
+#import "WKPhotoAlbumPreviewCell.h"
+
 @implementation WKPhotoPreviewTransition {
     UINavigationControllerOperation _operation;
     void (^ _transitionCompleted)(void);
@@ -44,18 +46,18 @@
     [contrainer addSubview:toVC.view];
     
     //selectCell shot
-    CGRect cellRect = [fromVC.selectCell.superview convertRect:fromVC.selectCell.frame toView:contrainer];
+    WKPhotoAlbumPreviewCell *cell = [fromVC cellAtManagerPreviewIndex];
+    CGRect cellRect = [cell.superview convertRect:cell.frame toView:contrainer];
     UIImageView *imageView = [[UIImageView alloc] init];
     imageView.contentMode  = UIViewContentModeScaleAspectFill;
     imageView.frame        = cellRect;
-    UIImage *coverImage    = toVC.coverImage;
+    UIImage *coverImage    = cell.image;
     imageView.image        = coverImage;
     [contrainer addSubview:imageView];
     
     CGRect realToRect = [self transitionRectByImage:coverImage imageFrame:[UIScreen mainScreen].bounds];
 
     toVC.view.alpha = 0.0;
-    fromVC.selectCell.hidden = YES;
     [contrainer layoutIfNeeded];
     
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0.0 usingSpringWithDamping:0.75 initialSpringVelocity:8 options:UIViewAnimationOptionCurveEaseOut animations:^{
@@ -78,22 +80,23 @@
     UIView *contrainer = transitionContext.containerView;
     [contrainer insertSubview:toVC.view atIndex:0];
     
-    UIImageView *imageView = [[UIImageView alloc] init];
-    UIImage *coverImage    = fromVC.coverImage;
-    imageView.image        = coverImage;
+    WKPhotoAlbumPreviewCell *cell = [toVC cellAtManagerPreviewIndex];
+
+    UIImageView *imageView  = [[UIImageView alloc] init];
+    UIImage *coverImage     = cell.image;
+    imageView.image         = coverImage;
     imageView.clipsToBounds = YES;
-    imageView.contentMode  = UIViewContentModeScaleAspectFill;
+    imageView.contentMode   = UIViewContentModeScaleAspectFill;
     [contrainer addSubview:imageView];
     
-    imageView.frame = [fromVC.dismissPreViewImageView.superview convertRect:fromVC.dismissPreViewImageView.frame toView:contrainer];
+    imageView.frame = [fromVC dismissRect];
     fromVC.dismissPreViewImageView.hidden = YES;
     
-    CGRect cellRect = [toVC.selectCell.superview convertRect:toVC.selectCell.frame toView:contrainer];
+    CGRect cellRect = [cell.superview convertRect:cell.frame toView:contrainer];
     [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{
         imageView.frame = cellRect;
         fromVC.view.alpha = 0.0;
     } completion:^(BOOL finished) {
-        toVC.selectCell.hidden = NO;
         [imageView removeFromSuperview];
         [transitionContext completeTransition:YES];
     }];

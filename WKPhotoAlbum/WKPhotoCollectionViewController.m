@@ -108,7 +108,8 @@
 UICollectionViewDelegate,
 UICollectionViewDataSource,
 WKPhotoAlbumPreviewCellDelegate,
-WKPhotoCollectBottomViewDelegate
+WKPhotoCollectBottomViewDelegate,
+WKPhotoAlbumCollectManagerChanged
 >
 
 @property (nonatomic, strong) UICollectionView              *collectionView;
@@ -162,7 +163,6 @@ WKPhotoCollectBottomViewDelegate
         CGFloat itemW = (self.view.bounds.size.width - (numberOfLine + 1) * itemMargin - 1) / numberOfLine;
         _manager.reqeustImageSize = CGSizeMake(itemW * [UIScreen mainScreen].scale,
                                                itemW * [UIScreen mainScreen].scale);
-        [self.collectionView reloadData];
     }
 }
 
@@ -222,6 +222,7 @@ WKPhotoCollectBottomViewDelegate
     reqeustOptions.synchronous = NO;
     _manager.reqeustImageOptions = reqeustOptions;
     [_manager.cacheManager stopCachingImagesForAllAssets];
+    [_manager addChangedListener:self];
     
     _maxCount = config.maxSelectCount;
 }
@@ -295,6 +296,7 @@ WKPhotoCollectBottomViewDelegate
         [self.navigationController popViewControllerAnimated:YES];
     }
     [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
+    [self.manager removeListener:self];
 }
 
 - (void)click_cancelButton {
@@ -312,6 +314,7 @@ WKPhotoCollectBottomViewDelegate
     }
     [WKPhotoAlbumConfig clearReback];
     [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
+    [self.manager removeListener:self];
 }
 
 - (void)pushToPreviewWithIndexPath:(NSIndexPath *)indexPath {
@@ -323,50 +326,56 @@ WKPhotoCollectBottomViewDelegate
         return;
     }
     
-    __block WKPhotoPreviewViewController *next = [[WKPhotoPreviewViewController alloc] init];
+    UIGraphicsBeginImageContext(self.view.bounds.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    [self.view.layer renderInContext:context];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
     self.manager.currentPreviewIndex = indexPath.row;
-    next.manager = self.manager;
+    WKPhotoPreviewViewController *next = [[WKPhotoPreviewViewController alloc] init];
     self.navigationController.delegate = next;
-    PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
-    options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
-    [self.manager.cacheManager requestImageForAsset:model.asset targetSize:[next targetSize] contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if (result) {
-            next.coverImage = result;
-            self.selectCell.hidden = YES;
-            UIGraphicsBeginImageContext(self.view.bounds.size);
-            CGContextRef context = UIGraphicsGetCurrentContext();
-            [self.view.layer renderInContext:context];
-            UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-            UIGraphicsEndImageContext();
-            next.screenShotImage = image;
-            [self.navigationController pushViewController:next animated:YES];
-        } else {
-            self.navigationController.delegate = nil;
-            next = nil;
+    next.manager = self.manager;
+    next.screenShotImage = image;
+    [self.navigationController pushViewController:next animated:YES];
+}
+
+- (WKPhotoAlbumPreviewCell *)cellAtManagerPreviewIndex {
+    return (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
+}
+
+#pragma mark - WKPhotoAlbumCollectManagerChanged
+- (BOOL)inListening {//跳转到预览时开启监听
+    return self.navigationController.topViewController != self;
+}
+- (void)managerValueChangedForKey:(NSString *)key withValue:(id)value {
+    if ([key isEqualToString:@"selectIndexArray"]) {
+        NSArray<WKPhotoAlbumPreviewCell *> *cells = [self.collectionView visibleCells];
+        for (WKPhotoAlbumPreviewCell *cell in cells) {
+            cell.selectIndex = 0;
         }
-    }];
+        for (NSNumber *selectIndex in self.manager.selectIndexArray) {
+            WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:selectIndex.integerValue inSection:0]];
+            cell.selectIndex = self.manager.allPhotoArray[selectIndex.integerValue].selectIndex;
+        }
+    }
 }
 
 #pragma mark - WKPhotoCollectBottomViewDelegate
 - (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
     
-    _selectCell = nil;
     CGRect visiableRect = CGRectMake(0, self.collectionView.contentOffset.y + self.collectionView.contentInset.top, self.collectionView.frame.size.width, self.collectionView.frame.size.height - self.collectionView.contentInset.bottom - self.collectionView.contentInset.top);
     NSArray<UICollectionViewLayoutAttributes *> *layoutAttributes = [self.collectionView.collectionViewLayout layoutAttributesForElementsInRect:visiableRect];
-    
+    self.manager.currentPreviewIndex = layoutAttributes.firstObject.indexPath.row;
+
     for (NSNumber *index in self.manager.selectIndexArray) {
         if (index.integerValue < layoutAttributes.firstObject.indexPath.row || index.integerValue > layoutAttributes.lastObject.indexPath.row) {
             continue;
         }
-        _selectCell = (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index.integerValue inSection:0]];
         self.manager.currentPreviewIndex = index.integerValue;
         break;
     }
-    
-    if (!_selectCell) {
-        _selectCell = (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:layoutAttributes.firstObject.indexPath];
-        self.manager.currentPreviewIndex = layoutAttributes.firstObject.indexPath.row;
-    }
+
     [self pushToPreviewWithIndexPath:[NSIndexPath indexPathForRow:self.manager.currentPreviewIndex inSection:0]];
 }
 - (void)actionViewDidClickUseOrigin:(WKPhotoCollectBottomView *)actionView useOrigin:(BOOL)useOrigin {
@@ -443,7 +452,6 @@ WKPhotoCollectBottomViewDelegate
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    _selectCell = [collectionView cellForItemAtIndexPath:indexPath];
     [self pushToPreviewWithIndexPath:indexPath];
 }
 

@@ -9,13 +9,15 @@
 #import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
 
+@class WKPhotoAlbumPreviewCell;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface WKPhotoCollectionViewController : UIViewController
 
 @property (nonatomic, strong) NSDictionary *assetDict;
 
-@property (nonatomic, strong, readonly, nullable) UICollectionViewCell *selectCell;
+- (WKPhotoAlbumPreviewCell *)cellAtManagerPreviewIndex;
 
 @end
 

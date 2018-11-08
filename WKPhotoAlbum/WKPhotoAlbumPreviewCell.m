@@ -9,13 +9,15 @@
 #import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoAlbumSelectButton.h"
 
-@interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate>
+@interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate, UIGestureRecognizerDelegate>
 
 @property (nonatomic, strong) WKPhotoAlbumSelectButton *selectButton;
 
 @end
 
-@implementation WKPhotoAlbumPreviewCell
+@implementation WKPhotoAlbumPreviewCell {
+    UITapGestureRecognizer *_doubleTapGesture;
+}
 
 - (void)layoutSubviews {
     [super layoutSubviews];
@@ -41,20 +43,13 @@
         _imageContentScrollView.delegate = self;
         [self.contentView addSubview:_imageContentScrollView];
         
-        _imageView.userInteractionEnabled = YES;
         [_imageContentScrollView addSubview:_imageView];
-        
-        UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleSingleTap:)];
-        singleTapGesture.numberOfTapsRequired = 1;
-        singleTapGesture.numberOfTouchesRequired = 1;
-        [self addGestureRecognizer:singleTapGesture];
-        
-        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap:)];
-        doubleTapGesture.numberOfTapsRequired = 2;
-        doubleTapGesture.numberOfTouchesRequired = 1;
-        [self addGestureRecognizer:doubleTapGesture];
-        //只有当doubleTapGesture识别失败的时候(即识别出这不是双击操作)，singleTapGesture才能开始识别
-        [singleTapGesture requireGestureRecognizerToFail:doubleTapGesture];
+
+        _doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap:)];
+        _doubleTapGesture.numberOfTapsRequired = 2;
+        _doubleTapGesture.numberOfTouchesRequired = 1;
+        _doubleTapGesture.delegate = self;
+        [self addGestureRecognizer:_doubleTapGesture];
         
     } else {
         _imageView.contentMode = UIViewContentModeScaleAspectFill;
@@ -70,11 +65,8 @@
 }
 
 #pragma mark - Action
-- (void)handleSingleTap:(UITapGestureRecognizer *)sender {
-    
-}
 - (void)handleDoubleTap:(UITapGestureRecognizer *)sender {
-    
+    [_imageContentScrollView setZoomScale:1.0 animated:YES];
 }
 - (void)click_selectButton {
     if ([self.delegate respondsToSelector:@selector(photoPreviewCell:didChangeToSelect:)]) {
@@ -111,10 +103,12 @@
 
 #pragma mark - Config
 - (void)aspectFitImageViewForImage:(UIImage *)image {
-    CGFloat scale = MIN(self.frame.size.width / image.size.width, self.frame.size.height / image.size.height);
-    CGFloat w = scale * image.size.width;
-    CGFloat h = scale * image.size.height;
-    _imageView.frame = CGRectMake((self.frame.size.width - w) / 2.0, (self.frame.size.height - h) / 2.0, w, h);
+    if (image) {
+        CGFloat scale = MIN(self.frame.size.width / image.size.width, self.frame.size.height / image.size.height);
+        CGFloat w = scale * image.size.width;
+        CGFloat h = scale * image.size.height;
+        _imageView.frame = CGRectMake((self.frame.size.width - w) / 2.0, (self.frame.size.height - h) / 2.0, w, h);
+    }
     _imageView.image = image;
 }
 
@@ -129,6 +123,13 @@
     frame.origin.x = scrollView.frame.size.width > _imageView.frame.size.width ? (scrollView.frame.size.width - _imageView.frame.size.width) * 0.5 : 0;
     _imageView.frame = frame;
     scrollView.contentSize = CGSizeMake(frame.size.width, frame.size.height);
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+    if (gestureRecognizer == _doubleTapGesture) {
+        return YES;
+    }
+    return NO;
 }
 
 
