@@ -23,7 +23,8 @@ UIScrollViewDelegate,
 UIGestureRecognizerDelegate,
 UICollectionViewDelegate,
 UICollectionViewDataSource,
-WKPhotoCollectBottomViewDelegate
+WKPhotoCollectBottomViewDelegate,
+WKPhotoAlbumPreviewCellDelegate
 >
 
 @property (nonatomic, strong) UICollectionView  *previewCollectionView;
@@ -65,15 +66,6 @@ WKPhotoCollectBottomViewDelegate
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     [self layoutSubview];
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    [self.navigationController setNavigationBarHidden:YES animated:animated];
-}
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    [self.navigationController setNavigationBarHidden:NO animated:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -119,22 +111,6 @@ WKPhotoCollectBottomViewDelegate
     
     _hiddenTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleHiddenGesture:)];
     [self.previewCollectionView addGestureRecognizer:_hiddenTapGesture];
-    
-//    if (_previewAsset.mediaType != PHAssetMediaTypeImage) {//非图片预览模式
-//        _videoPlayer      = [AVPlayer playerWithPlayerItem:_playerItem];
-//        _videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:_videoPlayer];
-//        _videoPlayerLayer.zPosition = 0.5;
-//        [_previewImageView.layer addSublayer:_videoPlayerLayer];
-//        [_videoPlayer addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-//
-//        _isPlaying = NO;
-//        _videoControl = [[UIButton alloc] init];
-//        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
-//        _videoControl.layer.zPosition = 1;
-//        [_previewImageView addSubview:_videoControl];
-//        [_videoControl addTarget:self action:@selector(click_videoControl) forControlEvents:UIControlEventTouchUpInside];
-//        [self addNotification];
-
 }
 
 - (void)layoutSubview {
@@ -148,16 +124,6 @@ WKPhotoCollectBottomViewDelegate
     
     if (_firstLayout) {
         [self.previewCollectionView setContentOffset:CGPointMake(self.manager.currentPreviewIndex * self.view.bounds.size.width, 0) animated:NO];
-        //        _clipConfirmView.frame = CGRectMake(0,
-        //                                            self.view.frame.size.height - 50,
-        //                                            CGRectGetWidth(self.view.frame),
-        //                                            50);
-        
-        //        [self aspectFitImageViewForImage:self.coverImage];
-        //        _videoPlayerLayer.frame = _previewImageView.bounds;
-        //        _videoControl.frame = CGRectMake((_previewImageView.bounds.size.width - 50) * 0.5,
-        //                                         (_previewImageView.bounds.size.height - 50) * 0.5, 50, 50);
-        
         _firstLayout = NO;
     }
 }
@@ -185,10 +151,71 @@ WKPhotoCollectBottomViewDelegate
         }
     }
 }
+#pragma mark - WKPhotoAlbumPreviewCellDelegate
+- (void)photoPreviewCellDidPlayControl:(WKPhotoAlbumPreviewCell *)previewCell {
+    [self setupPlayerForCell:previewCell];
+}
+
+- (void)setupPlayerForCell:(WKPhotoAlbumPreviewCell *)previewCell {
+    WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
+    model.isPlaying = YES;
+    
+    previewCell.videoContentView.hidden = NO;
+    previewCell.videoStartBtn.hidden = YES;
+
+    AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithAsset:model.playItem.asset];
+    _videoPlayer = [[AVPlayer alloc] initWithPlayerItem:playerItem];
+    _videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:_videoPlayer];
+  
+    if (!_videoControl) {
+        _videoControl = [[UIButton alloc] init];
+        [_videoControl addTarget:self action:@selector(click_videoControl) forControlEvents:UIControlEventTouchUpInside];
+    }
+    _videoPlayerLayer.frame = previewCell.videoContentView.bounds;
+    [previewCell.videoContentView.layer addSublayer:_videoPlayerLayer];
+    [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+    _videoControl.frame = CGRectMake((previewCell.videoContentView.bounds.size.width - 50) / 2.0,
+                                     (previewCell.videoContentView.bounds.size.height - 50) / 2.0,
+                                     50, 50);
+    [previewCell.videoContentView addSubview:_videoControl];
+    _isPlaying = NO;
+    [self addNotification];
+}
+- (void)clearPlayerForIndexPath:(NSIndexPath *)indexPath previewCell:(WKPhotoAlbumPreviewCell *)cell {
+    WKPhotoAlbumModel *model = self.manager.allPhotoArray[indexPath.row];
+    if (model.isPlaying) {
+        cell.albumInfo = model;
+        model.isPlaying = NO;
+        
+        [_videoPlayer pause];
+        [self removeNotification];
+        _videoPlayer = nil;
+        [_videoPlayerLayer removeFromSuperlayer];
+
+        [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoControl removeFromSuperview];
+        _isPlaying = NO;
+    }
+}
 
 #pragma mark - WKPhotoCollectBottomViewDelegate
 - (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView {
-    
+    [self.manager requestSelectImage:^(NSArray * _Nullable images) {
+        WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
+        if ([config.delegate respondsToSelector:@selector(photoAlbumDidSelectResult:)]) {
+            [config.delegate photoAlbumDidSelectResult:images];
+        }
+        if (config.selectBlock) {
+            config.selectBlock(images);
+        }
+        if (config.fromVC) {
+            [self.navigationController popToViewController:config.fromVC animated:YES];
+        } else {
+            [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        }
+        [WKPhotoAlbumConfig clearReback];
+        [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
+    }];
 }
 - (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
     if (!self.navigationView.isInEditMode) {
@@ -209,16 +236,24 @@ WKPhotoCollectBottomViewDelegate
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     cell.cellType = WKPhotoAlbumCellTypePreview;
+    cell.delegate = self;
     WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
-    cell.assetIdentifier = model.asset.localIdentifier;
-    [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if ([cell.assetIdentifier isEqualToString:model.asset.localIdentifier] && result) {
-            cell.image = result;
-        } else {
-            cell.image = nil;
-        }
-    }];
+    cell.albumInfo = model;
+    if (model.resultImage) {
+        cell.image = model.resultImage;
+    } else {
+        [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
+                cell.image = result;
+            } else {
+                cell.image = nil;
+            }
+        }];
+    }
     return cell;
+}
+- (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath {
+    [self clearPlayerForIndexPath:indexPath previewCell:(WKPhotoAlbumPreviewCell *)cell];
 }
 
 #pragma mark - UIScrollViewDelegate
@@ -493,10 +528,10 @@ WKPhotoCollectBottomViewDelegate
 - (void)click_videoControl {
     if (_isPlaying) {
         [_videoPlayer pause];
-        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     } else {
         [_videoPlayer play];
-        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
     }
     _isPlaying = !_isPlaying;
 }
@@ -507,35 +542,36 @@ WKPhotoCollectBottomViewDelegate
 
 #pragma mark - Notification
 - (void)addNotification {
-//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterBackground) name:UIApplicationWillResignActiveNotification object:nil];
-//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterPlayGround) name:UIApplicationDidBecomeActiveNotification object:nil];
-//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(moviePlayDidEnd:) name:AVPlayerItemDidPlayToEndTimeNotification object:_playerItem];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterBackground) name:UIApplicationWillResignActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterPlayGround) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(moviePlayDidEnd:) name:AVPlayerItemDidPlayToEndTimeNotification object:_videoPlayer.currentItem];
+    [_videoPlayer addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeNotification {
-//    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
-//    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillResignActiveNotification object:nil];
-//    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:_playerItem];
-//    [_videoPlayer removeObserver:self forKeyPath:@"status"];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillResignActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:_videoPlayer.currentItem];
+    [_videoPlayer removeObserver:self forKeyPath:@"status"];
 }
 
 - (void)appDidEnterBackground {
     if (_isPlaying) {
-        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         [_videoPlayer pause];
     }
 }
 
 - (void)appDidEnterPlayGround {
     if (_isPlaying) {
-        [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
         [_videoPlayer play];
     }
 }
 
 - (void)moviePlayDidEnd:(NSNotification *)notification {
     _isPlaying = NO;
-    [_videoControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+    [_videoControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     [_videoPlayer seekToTime:CMTimeMake(0, 1) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {}];
 }
 

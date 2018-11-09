@@ -12,15 +12,18 @@
 #import "WKPhotoCollectionViewController.h"
 
 #import "WKPhotoAlbumUtils.h"
-#import "WKPhotoAlbumCell.h"
-
 #import "WKPhotoAlbumConfig.h"
+
+#import "WKPhotoAlbumCell.h"
+#import "WKPhotoAlbumNormalNaviBar.h"
 
 @interface WKPhotoAlbumViewController ()<UITableViewDelegate, UITableViewDataSource>
 
-@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) UITableView    *tableView;
 
 @property (nonatomic, strong) NSMutableArray *assetCollection;
+
+@property (nonatomic, strong) WKPhotoAlbumNormalNaviBar *navigationBar;
 
 @end
 
@@ -34,31 +37,23 @@
     [self setupSubviews];
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    
-    self.navigationItem.title = @"相册";
-    UIButton *backButton = [[UIButton alloc] init];
-    [backButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
-    UIView *backView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 44, 44)];
-    [backView addSubview:backButton];
-    backButton.frame = CGRectMake(0, 10, 14.4, 24);
-    [backButton addTarget:self action:@selector(click_backButton) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backView];
-}
-
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-    _tableView.frame = self.view.bounds;
+    _tableView.frame = CGRectMake(0, CGRectGetMaxY(self.navigationBar.frame), self.view.bounds.size.width, self.view.bounds.size.height - CGRectGetHeight(self.navigationBar.frame));
 }
 
 - (void)setupSubviews {
+    
     _tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
     _tableView.delegate = self;
     _tableView.dataSource = self;
     _tableView.tableFooterView = [UIView new];
     _tableView.rowHeight = 120;
     [self.view addSubview:_tableView];
+    
+    _navigationBar = [[WKPhotoAlbumNormalNaviBar alloc] initWithTarget:self popAction:nil cancelAction:@selector(click_backButton)];
+    _navigationBar.title = @"相册";
+    [self.view addSubview:_navigationBar];
 }
 
 - (void)click_backButton {
@@ -70,7 +65,6 @@
         config.cancelBlock();
     }
     [WKPhotoAlbumConfig clearReback];
-    
     if (self.navigationController.childViewControllers.firstObject == self) {
         [self.navigationController dismissViewControllerAnimated:YES completion:nil];
     } else {

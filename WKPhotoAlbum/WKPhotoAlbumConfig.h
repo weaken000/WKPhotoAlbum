@@ -28,10 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)clearReback;
 
-//导航栏样式，当通过push跳转到照片模块时，不需要设置，默认white
-@property (nonatomic, strong) UIColor *naviBarTintColor;
-//default is black
-@property (nonatomic, strong) UIColor *naviTitleColor;
 //default is 20
 @property (nonatomic, strong) UIFont  *naviTitleFont;
 //default is 14
@@ -46,10 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSUInteger maxSelectCount;
 //default is NO
 @property (nonatomic, assign) BOOL canClipWhileSingle;
-//default is PHImageRequestOptionsDeliveryModeOpportunistic
-@property (nonatomic, assign) PHImageRequestOptionsDeliveryMode imageDeliveryMode;
-//default is PHVideoRequestOptionsDeliveryModeAutomatic
-@property (nonatomic, assign) PHVideoRequestOptionsDeliveryMode videoDeliveryMode;
 
 @property (nonatomic, copy  , nullable) void (^ selectBlock)(NSArray *result);
 

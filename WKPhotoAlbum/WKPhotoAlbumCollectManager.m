@@ -20,6 +20,18 @@
     return self;
 }
 
+- (void)setPlayItem:(AVPlayerItem *)playItem {
+    _playItem = playItem;
+    if (playItem) {
+        NSInteger second = CMTimeGetSeconds(playItem.asset.duration);
+        NSInteger min = second / 60;
+        NSInteger sec = second % 60;
+        _assetDuration = [NSString stringWithFormat:@"%02zd:%02zd", min, sec];
+    } else {
+        _assetDuration = nil;
+    }
+}
+
 @end
 
 @interface WKPhotoAlbumCollectManager()
@@ -93,11 +105,43 @@
 
 - (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
-    [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            resultHandler(result, info);
-        });
-    }];
+    
+    if (model.asset.mediaType == PHAssetMediaTypeAudio) {
+        if (model.playItem) {
+            resultHandler([UIImage imageNamed:@""], nil);
+            return;
+        }
+        PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+        options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+        [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                model.playItem = playerItem;
+                resultHandler([UIImage imageNamed:@""], nil);
+            });
+        }];
+    } else {
+        if (model.asset.mediaType == PHAssetMediaTypeVideo && model.playItem) {
+            resultHandler(model.videoCaptureImage, nil);
+            return;
+        }
+        [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
+                model.videoCaptureImage = result;
+                PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+                options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+                [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
+                    model.playItem = playerItem;
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        resultHandler(result, info);
+                    });
+                }];
+            } else {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    resultHandler(result, info);
+                });
+            }
+        }];
+    }
 }
 
 - (void)updateCacheForCollectionView:(UICollectionView *)collectionView withOffset:(CGPoint)offset {
@@ -237,6 +281,28 @@
         if ([listener inListening]) {//
             [listener managerValueChangedForKey:key withValue:value];
         }
+    }
+}
+
+- (void)requestSelectImage:(void (^)(NSArray * _Nullable))selectImages {
+    NSMutableArray *resultArr = [NSMutableArray arrayWithCapacity:self.selectIndexArray.count];
+    for (NSNumber *index in self.selectIndexArray) {
+        WKPhotoAlbumModel *model = self.allPhotoArray[index.integerValue];
+        if (model.resultImage) {
+            [resultArr addObject:model.resultImage];
+        } else {
+            [self reqeustCollectionImageForIndexPath:[NSIndexPath indexPathForRow:index.integerValue inSection:0] resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                if (result) {
+                    [resultArr addObject:result];
+                    if (resultArr.count == self.selectIndexArray.count) {
+                        selectImages(resultArr);
+                    }
+                }
+            }];
+        }
+    }
+    if (resultArr.count == self.selectIndexArray.count) {
+        selectImages(resultArr);
     }
 }
 

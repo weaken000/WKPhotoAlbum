@@ -10,25 +10,6 @@
 #import "WKPhotoAlbumViewController.h"
 #import "WKPhotoCollectionViewController.h"
 
-@interface WKPhotoAlbumNavigationController: UINavigationController
-@end
-@implementation WKPhotoAlbumNavigationController
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-
-    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-    NSDictionary *attributes   = @{NSForegroundColorAttributeName: config.naviTitleColor,
-                                   NSFontAttributeName: config.naviTitleFont};
-    [self.navigationBar setTitleTextAttributes:attributes];
-    self.navigationBar.barTintColor = config.naviBarTintColor;
-    self.navigationBar.tintColor    = config.naviTitleColor;
-    self.navigationBar.translucent  = NO;
-}
-
-@end
-
-
 @implementation WKPhotoAlbum
 
 + (UIViewController *)presentAlbumVC {
@@ -40,19 +21,10 @@
     [WKPhotoAlbumConfig sharedConfig].fromVC = nil;
 
     WKPhotoAlbumViewController *rootVC = [[WKPhotoAlbumViewController alloc] init];
-    WKPhotoAlbumNavigationController *navitionController = [[WKPhotoAlbumNavigationController alloc] initWithRootViewController:rootVC];WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];
+    UINavigationController *navitionController = [[UINavigationController alloc] initWithRootViewController:rootVC];WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];
     [navitionController pushViewController:allPhotoVC animated:NO];
+    [navitionController setNavigationBarHidden:YES];
     return navitionController;
-}
-
-+ (UIViewController *)pushAlbumVC {
-    return [self pushAlbumVCWithSelectBlock:nil cancelBlock:nil];
-}
-+ (UIViewController *)pushAlbumVCWithSelectBlock:(void (^)(NSArray * _Nonnull))selectBlock cancelBlock:(void (^)(void))cancelBlock {
-    [WKPhotoAlbumConfig sharedConfig].selectBlock = [selectBlock copy];
-    [WKPhotoAlbumConfig sharedConfig].cancelBlock = [cancelBlock copy];
-    WKPhotoCollectionViewController *rootVC = [[WKPhotoCollectionViewController alloc] init];
-    return rootVC;
 }
 
 + (void)setPhotoAlbumDelegate:(id<WKPhotoAlbumDelegate>)delegate {

@@ -10,6 +10,7 @@
 #import "WKPhotoAlbumSelectButton.h"
 
 #import "WKPhotoAlbumUtils.h"
+#import "WKPhotoAlbumConfig.h"
 
 @implementation WKPhotoPreviewNavigationView {
     UIButton *_leftButton;
@@ -29,7 +30,7 @@
         
         _leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_leftButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        _leftButton.titleLabel.font = [UIFont systemFontOfSize:15.0];
+        _leftButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
         [_leftButton addTarget:target action:leftAction forControlEvents:UIControlEventTouchUpInside];
         _leftButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         _leftButton.imageEdgeInsets = UIEdgeInsetsMake(14.5, 0, 14.5, 0);
@@ -38,7 +39,7 @@
         
         _rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_rightButton setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
-        _rightButton.titleLabel.font = [UIFont systemFontOfSize:15.0];
+        _rightButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
         [_rightButton addTarget:target action:rightAction forControlEvents:UIControlEventTouchUpInside];
         _rightButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
         [_rightButton setTitle:@"完成" forState:UIControlStateNormal];

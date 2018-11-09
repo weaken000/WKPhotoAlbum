@@ -29,6 +29,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, nullable) PHAsset *asset;
 
+@property (nonatomic, strong, nullable) AVPlayerItem *playItem;
+
+@property (nonatomic, strong, nullable) UIImage *videoCaptureImage;
+
+@property (nonatomic, copy  , readonly, nullable) NSString *assetDuration;
+
+@property (nonatomic, assign) BOOL isPlaying;
+
 @end
 
 @interface WKPhotoAlbumCollectManager : NSObject
@@ -61,6 +69,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addChangedListener:(id<WKPhotoAlbumCollectManagerChanged>)listener;
 
 - (void)removeListener:(id<WKPhotoAlbumCollectManagerChanged>)listener;
+
+- (void)requestSelectImage:(void (^)(NSArray * __nullable images))selectImages;
 
 @end
 

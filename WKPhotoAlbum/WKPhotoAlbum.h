@@ -18,12 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)presentAlbumVCWithSelectBlock:(nullable void(^)(NSArray *result))selectBlock
                                         cancelBlock:(nullable void(^)(void))cancelBlock;
 
-/** 导航栏跳转跳转 */
-+ (UIViewController *)pushAlbumVC;
-+ (UIViewController *)pushAlbumVCWithSelectBlock:(nullable void(^)(NSArray *result))selectBlock
-                                     cancelBlock:(nullable void(^)(void))cancelBlock;
-
-
 + (void)setPhotoAlbumDelegate:(id<WKPhotoAlbumDelegate>)delegate;
 
 @end

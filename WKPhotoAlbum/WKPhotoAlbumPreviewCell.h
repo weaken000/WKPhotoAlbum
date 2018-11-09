@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@class WKPhotoAlbumPreviewCell;
+@class WKPhotoAlbumPreviewCell, WKPhotoAlbumModel;
 
 typedef NS_ENUM(NSUInteger, WKPhotoAlbumCellType) {
     WKPhotoAlbumCellTypeUndefine,
@@ -22,19 +22,24 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol WKPhotoAlbumPreviewCellDelegate <NSObject>
 
 @optional
+
 - (BOOL)photoPreviewCell:(WKPhotoAlbumPreviewCell *)previewCell didChangeToSelect:(BOOL)select;
+
+- (void)photoPreviewCellDidPlayControl:(WKPhotoAlbumPreviewCell *)previewCell;
 
 @end
 
 @interface WKPhotoAlbumPreviewCell : UICollectionViewCell
 
-@property (nonatomic, strong) UIImageView       *imageView;
+@property (nonatomic, strong) UIImageView        *imageView;
 
 @property (nonatomic, strong) UIScrollView       *imageContentScrollView;
 
 @property (nonatomic, strong) UIView             *videoContentView;
 
-@property (nonatomic, copy  , nullable) NSString *assetIdentifier;
+@property (nonatomic, strong) UIButton           *videoStartBtn;
+
+@property (nonatomic, copy  , nullable) WKPhotoAlbumModel *albumInfo;
 
 @property (nonatomic, strong, nullable) UIImage  *image;
 

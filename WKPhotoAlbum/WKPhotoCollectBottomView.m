@@ -190,19 +190,18 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     WKPhotoAlbumModel *model = _previewAssetArr[indexPath.row];
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     cell.cellType = WKPhotoAlbumCellTypeSubPreview;
-    cell.assetIdentifier = model.asset.localIdentifier;
-    [_manager reqeustCollectionImageForIndexPath:[NSIndexPath indexPathForRow:model.collectIndex inSection:0] resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if (result) {
-            if ([cell.assetIdentifier isEqualToString:model.asset.localIdentifier]) {
+    cell.albumInfo = model;
+    if (model.resultImage) {
+        cell.image = model.resultImage;
+    } else {
+        [_manager reqeustCollectionImageForIndexPath:[NSIndexPath indexPathForRow:model.collectIndex inSection:0] resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
                 cell.image = result;
             } else {
                 cell.image = nil;
             }
-        } else {
-            cell.image = nil;
-        }
-    }];
-    
+        }];
+    }
     return cell;
 }
 

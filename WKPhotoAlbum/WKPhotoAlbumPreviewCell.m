@@ -8,10 +8,15 @@
 
 #import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoAlbumSelectButton.h"
+#import "WKPhotoAlbumCollectManager.h"
 
 @interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate>
 
 @property (nonatomic, strong) WKPhotoAlbumSelectButton *selectButton;
+
+@property (nonatomic, strong) UIImageView *videoTypeImageView;
+
+@property (nonatomic, strong) UILabel *videoLengthLabel;
 
 @end
 
@@ -21,12 +26,14 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    _imageContentScrollView.frame = self.bounds;
-    _videoContentView.frame = self.bounds;
-    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 30, 5, 25, 25);
     if (_cellType != WKPhotoAlbumCellTypePreview) {
         _imageView.frame = self.bounds;
     }
+    _imageContentScrollView.frame = self.bounds;
+    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 30, 5, 25, 25);
+    _videoContentView.frame = _imageView.bounds;
+    _videoStartBtn.frame = CGRectMake((self.bounds.size.width - 50) / 2.0, (self.bounds.size.height - 50) / 2.0, 50, 50);
+    _videoTypeImageView.frame = CGRectMake(5, self.bounds.size.height - 25, 20, 20);
 }
 
 - (void)setupSubviews {
@@ -42,6 +49,7 @@
         _imageContentScrollView.delegate = self;
         [self.contentView addSubview:_imageContentScrollView];
         
+        _imageView.userInteractionEnabled = YES;
         [_imageContentScrollView addSubview:_imageView];
 
         _doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap:)];
@@ -77,6 +85,11 @@
         }
     }
 }
+- (void)click_startButton {
+    if ([self.delegate respondsToSelector:@selector(photoPreviewCellDidPlayControl:)]) {
+        [self.delegate photoPreviewCellDidPlayControl:self];
+    }
+}
 
 #pragma mark - setter
 - (void)setCellType:(WKPhotoAlbumCellType)cellType {
@@ -91,10 +104,50 @@
         [self aspectFitImageViewForImage:image];
     } else {
         _imageView.image = image;
+        if (_cellType == WKPhotoAlbumCellTypeCollect && _albumInfo.playItem) {
+            _videoLengthLabel.text = _albumInfo.assetDuration;
+            [_videoLengthLabel sizeToFit];
+            _videoLengthLabel.frame = CGRectMake(CGRectGetMaxX(_videoTypeImageView.frame) + 10,
+                                                 self.bounds.size.height - 25 + (20 - _videoLengthLabel.frame.size.height) * 0.5,
+                                                 _videoLengthLabel.frame.size.width,
+                                                 _videoLengthLabel.frame.size.height);
+        }
     }
 }
 - (void)setSelectIndex:(NSInteger)selectIndex {
     self.selectButton.selectIndex = selectIndex;
+}
+- (void)setAlbumInfo:(WKPhotoAlbumModel *)albumInfo {
+    _albumInfo = albumInfo;
+    //展示播放按钮
+    if (_cellType == WKPhotoAlbumCellTypePreview) {
+        if (albumInfo.asset.mediaType != PHAssetMediaTypeImage) {
+            self.videoStartBtn.hidden = NO;
+            _videoContentView.hidden = NO;
+        } else {
+            _videoStartBtn.hidden = YES;
+            _videoContentView.hidden = YES;
+        }
+        return;
+    }
+    if (_cellType == WKPhotoAlbumCellTypeCollect) {
+        if (albumInfo.asset.mediaType != PHAssetMediaTypeImage) {
+            self.videoLengthLabel.hidden = NO;
+            self.videoTypeImageView.hidden = NO;
+        } else {
+            _videoLengthLabel.hidden = YES;
+            _videoTypeImageView.hidden = YES;
+        }
+        return;
+    }
+    if (_cellType == WKPhotoAlbumCellTypeSubPreview) {
+        if (albumInfo.asset.mediaType != PHAssetMediaTypeImage) {
+            self.videoTypeImageView.hidden = NO;
+        } else {
+            _videoTypeImageView.hidden = YES;
+        }
+        return;
+    }
 }
 
 #pragma mark - Config
@@ -141,12 +194,42 @@
     scrollView.contentSize = CGSizeMake(frame.size.width, frame.size.height);
 }
 
+#pragma mark - lazy load
 - (UIView *)videoContentView {
     if (!_videoContentView) {
-        _videoContentView = [[UIView alloc] initWithFrame:self.bounds];
-        [self.contentView addSubview:_videoContentView];
+        _videoContentView = [[UIView alloc] initWithFrame:self.imageView.bounds];
+        [self.imageView insertSubview:_videoContentView belowSubview:self.videoStartBtn];
     }
     return _videoContentView;
+}
+
+- (UIButton *)videoStartBtn {
+    if (!_videoStartBtn) {
+        _videoStartBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_videoStartBtn setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoStartBtn addTarget:self action:@selector(click_startButton) forControlEvents:UIControlEventTouchUpInside];
+        [self.videoContentView addSubview:_videoStartBtn];
+    }
+    return _videoStartBtn;
+}
+
+- (UIImageView *)videoTypeImageView {
+    if (!_videoTypeImageView) {
+        _videoTypeImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_icon.png"]];
+        _videoTypeImageView.contentMode = UIViewContentModeScaleAspectFit;
+        [self.imageView addSubview:_videoTypeImageView];
+    }
+    return _videoTypeImageView;
+}
+
+- (UILabel *)videoLengthLabel {
+    if (!_videoLengthLabel) {
+        _videoLengthLabel = [[UILabel alloc] init];
+        _videoLengthLabel.textColor = [UIColor whiteColor];
+        _videoLengthLabel.font = [UIFont systemFontOfSize:12];
+        [self.imageView addSubview:_videoLengthLabel];
+    }
+    return _videoLengthLabel;
 }
 
 

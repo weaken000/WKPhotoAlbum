@@ -15,8 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *title;
 
 - (instancetype)initWithTarget:(id)target
-                    popAction:(SEL)popAction
-                   cancelAction:(SEL)cancelAction;
+                    popAction:(nullable SEL)popAction
+                   cancelAction:(nullable SEL)cancelAction;
 
 @end
 
