@@ -18,7 +18,6 @@
 + (UIViewController *)presentAlbumVCWithSelectBlock:(void (^)(NSArray * _Nonnull))selectBlock cancelBlock:(void (^)(void))cancelBlock {
     [WKPhotoAlbumConfig sharedConfig].selectBlock = [selectBlock copy];
     [WKPhotoAlbumConfig sharedConfig].cancelBlock = [cancelBlock copy];
-    [WKPhotoAlbumConfig sharedConfig].fromVC = nil;
 
     WKPhotoAlbumViewController *rootVC = [[WKPhotoAlbumViewController alloc] init];
     UINavigationController *navitionController = [[UINavigationController alloc] initWithRootViewController:rootVC];WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];

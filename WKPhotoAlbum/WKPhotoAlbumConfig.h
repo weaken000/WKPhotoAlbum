@@ -49,8 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak  , nullable) id<WKPhotoAlbumDelegate> delegate;
 
-@property (nonatomic, weak  , nullable) UIViewController *fromVC;
-
 @end
 
 NS_ASSUME_NONNULL_END

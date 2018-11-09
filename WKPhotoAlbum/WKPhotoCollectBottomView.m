@@ -127,7 +127,7 @@ CGFloat const kActionViewLeftMargin     = 15.0;
                 [_preOrEditButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             }
             [_selectButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            [_selectButton setTitle:[NSString stringWithFormat:@"选择(%zd)", self.manager.selectIndexArray.count] forState:UIControlStateNormal];
+            [_selectButton setTitle:[NSString stringWithFormat:@"选择(%ld)", self.manager.selectIndexArray.count] forState:UIControlStateNormal];
         } else {
             if (_useForCollectVC) {
                 [_preOrEditButton setTitleColor:[UIColor colorWithWhite:0.7 alpha:0.7] forState:UIControlStateNormal];
@@ -161,6 +161,8 @@ CGFloat const kActionViewLeftMargin     = 15.0;
         if (_selectPreCollectionView) {
             _previewAssetIndex = [value integerValue];
             [_selectPreCollectionView reloadData];
+            WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
+            _preOrEditButton.hidden = (model.asset.mediaType != PHAssetMediaTypeImage);
         }
     }
 }

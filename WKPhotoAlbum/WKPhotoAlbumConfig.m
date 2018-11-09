@@ -43,7 +43,6 @@
     config.selectBlock = nil;
     config.cancelBlock = nil;
     config.delegate = nil;
-    config.fromVC = nil;
 }
 
 @end

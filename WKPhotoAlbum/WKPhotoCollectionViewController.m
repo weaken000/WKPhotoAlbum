@@ -137,7 +137,6 @@ WKPhotoAlbumCollectManagerChanged
     self.extendedLayoutIncludesOpaqueBars = YES;
 
     self.navigationView.hidden = NO;
-    [self setupFromVC];
     [self requestAuthorization];
 }
 
@@ -162,7 +161,6 @@ WKPhotoAlbumCollectManagerChanged
     PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
     _photoAuthorization = status;
     if (status == PHAuthorizationStatusAuthorized) {//已获得权限
-        [self insertPhotoAlbumVC];
         [self installManager];
         [self setupSubviews];
     } else {
@@ -170,31 +168,7 @@ WKPhotoAlbumCollectManagerChanged
     }
 }
 
-- (void)setupFromVC {
-    NSArray *tmp = [[self.navigationController.childViewControllers reverseObjectEnumerator] allObjects];
-    for (UIViewController *vc in tmp) {
-        if ([vc isKindOfClass:[WKPhotoAlbumViewController class]]) {
-            return;
-        }
-    }
-    [WKPhotoAlbumConfig sharedConfig].fromVC = self.navigationController.childViewControllers[self.navigationController.childViewControllers.count - 2];
-}
-
 #pragma mark -
-- (void)insertPhotoAlbumVC {
-    NSArray *tmp = [[self.navigationController.childViewControllers reverseObjectEnumerator] allObjects];
-    for (UIViewController *vc in tmp) {
-        if ([vc isKindOfClass:[WKPhotoAlbumViewController class]]) {
-            return;
-        }
-    }
-    NSMutableArray *childVCs = [self.navigationController.childViewControllers mutableCopy];
-    WKPhotoAlbumViewController *vc = [[WKPhotoAlbumViewController alloc] init];
-    [childVCs insertObject:vc atIndex:childVCs.count - 1];
-    [self.navigationController setViewControllers:childVCs];
-    [WKPhotoAlbumConfig sharedConfig].fromVC = childVCs[childVCs.count - 3];
-}
-
 - (void)installManager {
     
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
@@ -306,12 +280,7 @@ WKPhotoAlbumCollectManagerChanged
 }
 
 - (void)popAndClearData {
-    WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
-    if (config.fromVC) {
-        [self.navigationController popToViewController:config.fromVC animated:YES];
-    } else {
-        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
-    }
+    [self.navigationController dismissViewControllerAnimated:YES completion:nil];
     [WKPhotoAlbumConfig clearReback];
     [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
     [self.manager removeListener:self];
@@ -456,7 +425,6 @@ WKPhotoAlbumCollectManagerChanged
                 dispatch_async(dispatch_get_main_queue(), ^{
                     __strong typeof(weakSelf) strongSelf = weakSelf;
                     if (status == PHAuthorizationStatusAuthorized) {
-                        [strongSelf insertPhotoAlbumVC];
                         [strongSelf installManager];
                         [strongSelf setupSubviews];
                     }

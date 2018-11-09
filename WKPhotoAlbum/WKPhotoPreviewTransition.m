@@ -90,7 +90,7 @@
     [contrainer addSubview:imageView];
     
     imageView.frame = [fromVC dismissRect];
-    fromVC.dismissPreViewImageView.hidden = YES;
+//    fromVC.dismissPreViewImageView.hidden = YES;
     
     CGRect cellRect = [cell.superview convertRect:cell.frame toView:contrainer];
     [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{

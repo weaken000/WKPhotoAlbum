@@ -18,8 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 //截图展示
 @property (nonatomic, strong, readonly) UIImageView *screenShotImageView;
 
-@property (nonatomic, strong, readonly) UIImageView *dismissPreViewImageView;
-
 @property (nonatomic, strong) WKPhotoAlbumCollectManager *manager;
 
 - (CGSize)targetSize;

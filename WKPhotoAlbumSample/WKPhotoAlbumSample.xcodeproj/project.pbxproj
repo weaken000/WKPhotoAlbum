@@ -16,6 +16,7 @@
 		04B9B18E2177069F002D2581 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B18D2177069F002D2581 /* main.m */; };
 		04B9B1982177069F002D2581 /* WKPhotoAlbumSampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B1972177069F002D2581 /* WKPhotoAlbumSampleTests.m */; };
 		04B9B1A32177069F002D2581 /* WKPhotoAlbumSampleUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B1A22177069F002D2581 /* WKPhotoAlbumSampleUITests.m */; };
+		04C7CC21219572FC000F28EA /* WKPhotoAlbumMediaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 04C7CC20219572FC000F28EA /* WKPhotoAlbumMediaPlayer.m */; };
 		04F3587121772127002FA12F /* WKPhotoAlbum.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F3585F21772127002FA12F /* WKPhotoAlbum.m */; };
 		04F3587221772127002FA12F /* WKPhotoAlbumConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F3586021772127002FA12F /* WKPhotoAlbumConfig.m */; };
 		04F3587321772127002FA12F /* WKPhotoAlbumCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F3586121772127002FA12F /* WKPhotoAlbumCell.m */; };
@@ -67,6 +68,8 @@
 		04B9B19E2177069F002D2581 /* WKPhotoAlbumSampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WKPhotoAlbumSampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04B9B1A22177069F002D2581 /* WKPhotoAlbumSampleUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumSampleUITests.m; sourceTree = "<group>"; };
 		04B9B1A42177069F002D2581 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		04C7CC1F219572FC000F28EA /* WKPhotoAlbumMediaPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumMediaPlayer.h; sourceTree = "<group>"; };
+		04C7CC20219572FC000F28EA /* WKPhotoAlbumMediaPlayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumMediaPlayer.m; sourceTree = "<group>"; };
 		04F3585F21772127002FA12F /* WKPhotoAlbum.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbum.m; sourceTree = "<group>"; };
 		04F3586021772127002FA12F /* WKPhotoAlbumConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumConfig.m; sourceTree = "<group>"; };
 		04F3586121772127002FA12F /* WKPhotoAlbumCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumCell.m; sourceTree = "<group>"; };
@@ -217,6 +220,8 @@
 				04F909962192B95D00CE55C2 /* WKPhotoAlbumSelectButton.m */,
 				04F9099B2193CC1D00CE55C2 /* WKPhotoAlbumPreviewCell.h */,
 				04F9099C2193CC1D00CE55C2 /* WKPhotoAlbumPreviewCell.m */,
+				04C7CC1F219572FC000F28EA /* WKPhotoAlbumMediaPlayer.h */,
+				04C7CC20219572FC000F28EA /* WKPhotoAlbumMediaPlayer.m */,
 			);
 			name = WKPhotoAlbum;
 			path = ../WKPhotoAlbum;
@@ -355,6 +360,7 @@
 			files = (
 				04F3587221772127002FA12F /* WKPhotoAlbumConfig.m in Sources */,
 				04B9B1832177069C002D2581 /* ViewController.m in Sources */,
+				04C7CC21219572FC000F28EA /* WKPhotoAlbumMediaPlayer.m in Sources */,
 				04F3587321772127002FA12F /* WKPhotoAlbumCell.m in Sources */,
 				04F909942192989400CE55C2 /* WKPhotoPreviewNavigationView.m in Sources */,
 				04F9098E21916EB200CE55C2 /* WKPhotoAlbumCollectManager.m in Sources */,
