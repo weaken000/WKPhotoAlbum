@@ -125,8 +125,10 @@ WKPhotoAlbumCollectManagerChanged
 @end
 
 @implementation WKPhotoCollectionViewController {
-    NSInteger                 _maxCount;
-    PHAuthorizationStatus     _photoAuthorization;
+    NSInteger             _maxCount;
+    PHAuthorizationStatus _photoAuthorization;
+    NSUInteger            _numberOfLine;
+    CGFloat               _lineSpace;
 }
 
 #pragma mark - life circle
@@ -136,6 +138,8 @@ WKPhotoAlbumCollectManagerChanged
     self.view.backgroundColor = [UIColor whiteColor];
     self.extendedLayoutIncludesOpaqueBars = YES;
 
+    _numberOfLine = [WKPhotoAlbumConfig sharedConfig].numberOfLine;
+    _lineSpace    = [WKPhotoAlbumConfig sharedConfig].lineSpace;
     self.navigationView.hidden = NO;
     [self requestAuthorization];
 }
@@ -148,9 +152,7 @@ WKPhotoAlbumCollectManagerChanged
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     if (self.manager.reqeustImageSize.width != 0) {
-        CGFloat numberOfLine = 4;
-        CGFloat itemMargin = 1.0;
-        CGFloat itemW = (self.view.bounds.size.width - (numberOfLine + 1) * itemMargin - 1) / numberOfLine;
+        CGFloat itemW = (self.view.bounds.size.width - (_numberOfLine + 1) * _lineSpace - 1) / _numberOfLine;
         _manager.reqeustImageSize = CGSizeMake(itemW * [UIScreen mainScreen].scale,
                                                itemW * [UIScreen mainScreen].scale);
     }
@@ -193,14 +195,14 @@ WKPhotoAlbumCollectManagerChanged
 }
 
 - (void)setupSubviews {
-    CGFloat numberOfLine = 4;
-    CGFloat itemMargin = 1.0;
-    CGFloat itemW = (self.view.bounds.size.width - (numberOfLine + 1) * itemMargin - 1) / numberOfLine;
+    
+    CGFloat itemW = (self.view.bounds.size.width - (_numberOfLine + 1) * _lineSpace - 1) / _numberOfLine;
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.scrollDirection = UICollectionViewScrollDirectionVertical;
     layout.itemSize = CGSizeMake(itemW, itemW);
-    layout.minimumLineSpacing = itemMargin;
-    layout.minimumInteritemSpacing = itemMargin;
+    layout.minimumLineSpacing = _lineSpace;
+    layout.minimumInteritemSpacing = _lineSpace;
+    layout.sectionInset = UIEdgeInsetsMake(_lineSpace, _lineSpace, _lineSpace, _lineSpace);
     
     _manager.reqeustImageSize = CGSizeMake(itemW * [UIScreen mainScreen].scale,
                                            itemW * [UIScreen mainScreen].scale);

@@ -7,14 +7,12 @@
 //
 
 #import "WKPhotoCollectBottomView.h"
-
 #import "WKPhotoAlbumPreviewCell.h"
-
 #import "WKPhotoAlbumCollectManager.h"
-#import "WKPhotoAlbumUtils.h"
+#import "WKPhotoAlbumConfig.h"
 
-CGFloat const kActionViewPreViewHeight  = 80.0;
-CGFloat const kActionViewActionHeight   = 44.0;
+CGFloat const kActionViewPreViewHeight  = 114.0;
+CGFloat const kActionViewActionHeight   = 58.0;
 CGFloat const kActionViewLeftMargin     = 15.0;
 
 @interface WKPhotoCollectBottomView()<UICollectionViewDelegate, UICollectionViewDataSource, WKPhotoAlbumCollectManagerChanged>
@@ -26,6 +24,7 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     UIButton                     *_useOriginButton;
     UIButton                     *_preOrEditButton;
     UICollectionView             *_selectPreCollectionView;
+    UIView                       *_lineView;
     NSArray<WKPhotoAlbumModel *> *_previewAssetArr;
     BOOL                          _useForCollectVC;
     NSInteger                     _previewAssetIndex;
@@ -59,10 +58,10 @@ CGFloat const kActionViewLeftMargin     = 15.0;
 }
 
 - (void)setupSubviews {
-    self.backgroundColor = [WKPhotoAlbumUtils r:39 g:48 b:55 a:0.8];
     
     if (!_useForCollectVC) {
-        CGFloat margin = 15.0;
+        self.backgroundColor = [WKPhotoAlbumConfig sharedConfig].bottomBarColorWhilePreview;
+        CGFloat margin = 16.0;
         CGFloat itemW = kActionViewPreViewHeight - 2 * margin;
         
         UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
@@ -74,22 +73,29 @@ CGFloat const kActionViewLeftMargin     = 15.0;
         _selectPreCollectionView.delegate = self;
         _selectPreCollectionView.dataSource = self;
         [_selectPreCollectionView registerClass:[WKPhotoAlbumPreviewCell class] forCellWithReuseIdentifier:@"cell"];
-        _selectPreCollectionView.backgroundColor = self.backgroundColor;
+        _selectPreCollectionView.backgroundColor = [UIColor clearColor];
         [self addSubview:_selectPreCollectionView];
+        
+        _lineView = [[UIView alloc] init];
+        _lineView.backgroundColor = [UIColor colorWithWhite:0.6 alpha:0.6];
+        [self addSubview:_lineView];
+        _lineView.frame = CGRectMake(margin, kActionViewPreViewHeight, [UIScreen mainScreen].bounds.size.width - 2 * margin, 0.5);
+    } else {
+        self.backgroundColor = [WKPhotoAlbumConfig sharedConfig].bottomBarColorWhileCollect;
     }
 
     _preOrEditButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [_preOrEditButton setTitle:(_useForCollectVC ? @"预览" : @"编辑") forState:UIControlStateNormal];
-    _preOrEditButton.titleLabel.font = [UIFont systemFontOfSize:16];
+    _preOrEditButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
     _preOrEditButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     [_preOrEditButton addTarget:self action:@selector(click_preview) forControlEvents:UIControlEventTouchUpInside];
     _preOrEditButton.enabled = YES;
-    [_preOrEditButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [_preOrEditButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
     [self addSubview:_preOrEditButton];
     
     _useOriginButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [_useOriginButton setTitle:@"使用原图" forState:UIControlStateNormal];
-    [_useOriginButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [_useOriginButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
     [_useOriginButton setTitleColor:[UIColor redColor] forState:UIControlStateSelected];
     _useOriginButton.titleLabel.font = [UIFont systemFontOfSize:16];
     [_useOriginButton addTarget:self action:@selector(click_useOrigin) forControlEvents:UIControlEventTouchUpInside];
@@ -99,7 +105,7 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     _selectButton.layer.cornerRadius = 5.0;
     _selectButton.layer.masksToBounds = YES;
     [_selectButton setTitle:@"选择" forState:UIControlStateNormal];
-    _selectButton.titleLabel.font = [UIFont systemFontOfSize:16];
+    _selectButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
     [_selectButton addTarget:self action:@selector(click_select) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:_selectButton];
     
@@ -122,18 +128,18 @@ CGFloat const kActionViewLeftMargin     = 15.0;
         //改变选择按钮状态
         BOOL enable = (self.manager.selectIndexArray.count > 0);
         if (enable) {
-            _selectButton.backgroundColor = [WKPhotoAlbumUtils r:37 g:171 b:40 a:1.0];
+            _selectButton.backgroundColor = [WKPhotoAlbumConfig sharedConfig].selectColor;
             if (_useForCollectVC) {
-                [_preOrEditButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+                [_preOrEditButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
             }
-            [_selectButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+            [_selectButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
             [_selectButton setTitle:[NSString stringWithFormat:@"选择(%ld)", self.manager.selectIndexArray.count] forState:UIControlStateNormal];
         } else {
             if (_useForCollectVC) {
-                [_preOrEditButton setTitleColor:[UIColor colorWithWhite:0.7 alpha:0.7] forState:UIControlStateNormal];
+                [_preOrEditButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].unEnableTitleColor forState:UIControlStateNormal];
             }
-            [_selectButton setTitleColor:[UIColor colorWithWhite:0.7 alpha:0.7] forState:UIControlStateNormal];
-            _selectButton.backgroundColor = [WKPhotoAlbumUtils r:27 g:81 b:28 a:0.8];
+            [_selectButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].unEnableTitleColor forState:UIControlStateNormal];
+            _selectButton.backgroundColor = [WKPhotoAlbumConfig sharedConfig].unSelectColor;
             [_selectButton setTitle:@"选择" forState:UIControlStateNormal];
         }
         if (_useForCollectVC) {
@@ -218,8 +224,8 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     WKPhotoAlbumPreviewCell *previewCell = (WKPhotoAlbumPreviewCell *)cell;
     WKPhotoAlbumModel *model = _previewAssetArr[indexPath.row];
     if (model.collectIndex == _previewAssetIndex) {
-        previewCell.imageView.layer.borderColor = [UIColor greenColor].CGColor;
-        previewCell.imageView.layer.borderWidth = 1.0;
+        previewCell.imageView.layer.borderColor = [WKPhotoAlbumConfig sharedConfig].selectColor.CGColor;
+        previewCell.imageView.layer.borderWidth = 4.0;
     } else {
         previewCell.imageView.layer.borderWidth = 0.0;
     }

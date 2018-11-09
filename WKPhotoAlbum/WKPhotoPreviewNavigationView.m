@@ -8,8 +8,6 @@
 
 #import "WKPhotoPreviewNavigationView.h"
 #import "WKPhotoAlbumSelectButton.h"
-
-#import "WKPhotoAlbumUtils.h"
 #import "WKPhotoAlbumConfig.h"
 
 @implementation WKPhotoPreviewNavigationView {
@@ -26,10 +24,10 @@
         CGFloat width = [UIScreen mainScreen].bounds.size.width;
         self.frame = CGRectMake(0, 0, width, height);
         
-        self.backgroundColor = [WKPhotoAlbumUtils r:39 g:48 b:55 a:0.8];
+        self.backgroundColor = [WKPhotoAlbumConfig sharedConfig].naviBgColor;
         
         _leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_leftButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [_leftButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
         _leftButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
         [_leftButton addTarget:target action:leftAction forControlEvents:UIControlEventTouchUpInside];
         _leftButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
@@ -38,7 +36,7 @@
         [self addSubview:_leftButton];
         
         _rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_rightButton setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+        [_rightButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].selectColor forState:UIControlStateNormal];
         _rightButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
         [_rightButton addTarget:target action:rightAction forControlEvents:UIControlEventTouchUpInside];
         _rightButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;

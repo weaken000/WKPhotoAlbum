@@ -30,9 +30,10 @@
         _imageView.frame = self.bounds;
     }
     _imageContentScrollView.frame = self.bounds;
-    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 30, 5, 25, 25);
+    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 32, 2, 30, 30);
     _videoContentView.frame = _imageView.bounds;
-    _videoStartBtn.frame = CGRectMake((self.bounds.size.width - 50) / 2.0, (self.bounds.size.height - 50) / 2.0, 50, 50);
+    CGFloat controlW = 75;
+    _videoStartBtn.frame = CGRectMake((self.bounds.size.width - controlW) / 2.0, (self.bounds.size.height - controlW) / 2.0, controlW, controlW);
     _videoTypeImageView.frame = CGRectMake(5, self.bounds.size.height - 25, 20, 20);
 }
 
@@ -206,7 +207,7 @@
 - (UIButton *)videoStartBtn {
     if (!_videoStartBtn) {
         _videoStartBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_videoStartBtn setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoStartBtn setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         [_videoStartBtn addTarget:self action:@selector(click_startButton) forControlEvents:UIControlEventTouchUpInside];
         [self.videoContentView addSubview:_videoStartBtn];
     }

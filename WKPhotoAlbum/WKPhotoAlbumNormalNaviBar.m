@@ -7,7 +7,6 @@
 //
 
 #import "WKPhotoAlbumNormalNaviBar.h"
-#import "WKPhotoAlbumUtils.h"
 #import "WKPhotoAlbumConfig.h"
 
 @implementation WKPhotoAlbumNormalNaviBar {
@@ -19,7 +18,7 @@
         CGFloat statusH = [UIApplication sharedApplication].statusBarFrame.size.height;
         CGFloat width = [UIScreen mainScreen].bounds.size.width;
         self.frame = CGRectMake(0, 0, width, 44.0 + statusH);
-        self.backgroundColor = [WKPhotoAlbumUtils r:0 g:0 b:0 a:0.6];
+        self.backgroundColor = [WKPhotoAlbumConfig sharedConfig].naviBgColor;
         
         if (popAction) {
             UIButton *backButton = [[UIButton alloc] init];
@@ -37,7 +36,7 @@
             cancelButton.frame = CGRectMake(width - 55, statusH, 50, 44);
             cancelButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
             [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-            [cancelButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+            [cancelButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
             cancelButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
             [cancelButton addTarget:target action:cancelAction forControlEvents:UIControlEventTouchUpInside];
             [self addSubview:cancelButton];

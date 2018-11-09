@@ -31,12 +31,12 @@
     if (!_playControl) {
         _playControl = [[UIButton alloc] init];
         [_playControl addTarget:self action:@selector(click_videoControl) forControlEvents:UIControlEventTouchUpInside];
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         [self addSubview:_playControl];
     }
-    _playControl.frame = CGRectMake((self.bounds.size.width - 50) / 2.0,
-                                    (self.bounds.size.height - 50) / 2.0,
-                                    50, 50);
+    _playControl.frame = CGRectMake((self.bounds.size.width - 75) / 2.0,
+                                    (self.bounds.size.height - 75) / 2.0,
+                                    75, 75);
     
     _playing = NO;
     [self addNotification];
@@ -48,14 +48,14 @@
     [self removeNotification];
     [_player pause];
     _player = nil;
-    [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+    [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     _playing = NO;
 }
 
 - (void)play {
     if (!self.isPlaying) {
         [_player play];
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
         _playing = YES;
     }
 }
@@ -63,7 +63,7 @@
 - (void)stop {
     if (self.isPlaying) {
         [_player pause];
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         _playing = NO;
     }
 }
@@ -71,10 +71,10 @@
 - (void)click_videoControl {
     if (self.isPlaying) {
         [_player pause];
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     } else {
         [_player play];
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
     }
     _playing = !_playing;
 }
@@ -96,21 +96,21 @@
 
 - (void)appDidEnterBackground {
     if (self.isPlaying) {
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
         [_player pause];
     }
 }
 
 - (void)appDidEnterPlayGround {
     if (self.isPlaying) {
-        [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
+        [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_pause.png"] forState:UIControlStateNormal];
         [_player play];
     }
 }
 
 - (void)moviePlayDidEnd:(NSNotification *)notification {
     _playing = NO;
-    [_playControl setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+    [_playControl setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
     [_player seekToTime:CMTimeMake(0, 1) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {}];
 }
 

@@ -7,6 +7,7 @@
 //
 
 #import "WKPhotoAlbumSelectButton.h"
+#import "WKPhotoAlbumConfig.h"
 
 @interface WKPhotoAlbumSelectButton()
 
@@ -58,7 +59,7 @@
         _selectIndexLabel = [[UILabel alloc] init];
         _selectIndexLabel.textColor = [UIColor whiteColor];
         _selectIndexLabel.font = [UIFont systemFontOfSize:13];
-        _selectIndexLabel.backgroundColor = [UIColor greenColor];
+        _selectIndexLabel.backgroundColor = [WKPhotoAlbumConfig sharedConfig].selectColor;
         _selectIndexLabel.textAlignment = NSTextAlignmentCenter;
         _selectIndexLabel.layer.masksToBounds = YES;
         [self addSubview:_selectIndexLabel];
