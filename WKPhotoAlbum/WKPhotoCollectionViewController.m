@@ -14,9 +14,9 @@
 #import "WKPhotoCollectBottomView.h"
 #import "WKPhotoAlbumNormalNaviBar.h"
 
-#import "WKPhotoAlbumUtils.h"
 #import "WKPhotoAlbumConfig.h"
 #import "WKPhotoAlbumCollectManager.h"
+#import "WKPhotoAlbumUtils.h"
 
 @interface WKPhotoAlbumAuthorizationView : UIView
 
@@ -50,7 +50,7 @@
             [self addSubview:_deniedTipLabel];
             
             _deniedTipImageView = [[UIImageView alloc] init];
-            _deniedTipImageView.image = [UIImage imageNamed:@""];
+            _deniedTipImageView.image = [WKPhotoAlbumUtils imageName:@"wk_auth_lock"];
             [self addSubview:_deniedTipImageView];
             
             _jumpToSettingBtn = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -125,8 +125,8 @@ WKPhotoAlbumCollectManagerChanged
 @end
 
 @implementation WKPhotoCollectionViewController {
-    NSInteger             _maxCount;
     PHAuthorizationStatus _photoAuthorization;
+    NSInteger             _maxCount;
     NSUInteger            _numberOfLine;
     CGFloat               _lineSpace;
 }
@@ -298,9 +298,13 @@ WKPhotoAlbumCollectManagerChanged
 }
 - (void)managerValueChangedForKey:(NSString *)key withValue:(id)value {
     if ([key isEqualToString:@"selectIndexArray"]) {
-        NSArray<WKPhotoAlbumPreviewCell *> *cells = [self.collectionView visibleCells];
-        for (WKPhotoAlbumPreviewCell *cell in cells) {
+        NSArray<NSIndexPath *> *visiableIndexs = [self.collectionView indexPathsForVisibleItems];
+        for (NSIndexPath *indexPath in visiableIndexs) {
+            WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:indexPath];
             cell.selectIndex = 0;
+            if (self.manager.allPhotoArray[indexPath.row].clipImage) {
+                cell.image = self.manager.allPhotoArray[indexPath.row].clipImage;
+            }
         }
         for (NSNumber *selectIndex in self.manager.selectIndexArray) {
             WKPhotoAlbumPreviewCell *cell = (WKPhotoAlbumPreviewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:selectIndex.integerValue inSection:0]];
@@ -350,21 +354,17 @@ WKPhotoAlbumCollectManagerChanged
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"photoCell" forIndexPath:indexPath];
     WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
-    cell.cellType = WKPhotoAlbumCellTypeCollect;
+    cell.cellType  = WKPhotoAlbumCellTypeCollect;
     cell.albumInfo = model;
-    cell.delegate = self;
+    cell.delegate  = self;
     cell.selectIndex = model.selectIndex;
-    if (model.resultImage) {
-        cell.image = model.resultImage;
-    } else {
-        [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-            if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
-                cell.image = result;
-            } else {
-                cell.image = nil;
-            }
-        }];
-    }
+    [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
+            cell.image = result;
+        } else {
+            cell.image = nil;
+        }
+    }];
     return cell;
 }
 

@@ -48,8 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UIColor *bottomBarColorWhilePreview;
 //default is NO
 @property (nonatomic, assign) BOOL isIncludeVideo;
-//default is NO
-@property (nonatomic, assign) BOOL isIncludeAudio;
 //default is YES
 @property (nonatomic, assign) BOOL isIncludeImage;
 //default is 1

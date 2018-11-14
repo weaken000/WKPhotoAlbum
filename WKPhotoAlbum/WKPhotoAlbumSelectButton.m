@@ -8,6 +8,7 @@
 
 #import "WKPhotoAlbumSelectButton.h"
 #import "WKPhotoAlbumConfig.h"
+#import "WKPhotoAlbumUtils.h"
 
 @interface WKPhotoAlbumSelectButton()
 
@@ -19,8 +20,8 @@
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self == [super initWithFrame:frame]) {
-        [self setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateNormal];
-        [self setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_photo_select.png"] forState:UIControlStateHighlighted];
+        [self setBackgroundImage:[WKPhotoAlbumUtils imageName:@"wk_photo_select"] forState:UIControlStateNormal];
+        [self setBackgroundImage:[WKPhotoAlbumUtils imageName:@"wk_photo_select"] forState:UIControlStateHighlighted];
     }
     return self;
 }

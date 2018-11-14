@@ -91,9 +91,6 @@
             if (obj.mediaType == PHAssetMediaTypeImage && config.isIncludeImage) {
                 [assets addObject:obj];
             }
-            if (obj.mediaType == PHAssetMediaTypeAudio && config.isIncludeAudio) {
-                [assets addObject:obj];
-            }
         }];
         if (!assets.count) continue;
         [WKPhotoAlbumUtils readImageByAsset:assets.firstObject size:CGSizeMake(150, 150) deliveryMode:0 contentModel:PHImageContentModeAspectFit synchronous:YES complete:^(UIImage * _Nonnull image) {
@@ -115,9 +112,6 @@
                 [assets addObject:obj];
             }
             if (obj.mediaType == PHAssetMediaTypeImage && config.isIncludeImage) {
-                [assets addObject:obj];
-            }
-            if (obj.mediaType == PHAssetMediaTypeAudio && config.isIncludeAudio) {
                 [assets addObject:obj];
             }
         }];

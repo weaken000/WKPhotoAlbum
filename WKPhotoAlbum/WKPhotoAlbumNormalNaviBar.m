@@ -8,6 +8,7 @@
 
 #import "WKPhotoAlbumNormalNaviBar.h"
 #import "WKPhotoAlbumConfig.h"
+#import "WKPhotoAlbumUtils.h"
 
 @implementation WKPhotoAlbumNormalNaviBar {
     UILabel *_titleLabel;
@@ -22,7 +23,7 @@
         
         if (popAction) {
             UIButton *backButton = [[UIButton alloc] init];
-            [backButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
+            [backButton setImage:[WKPhotoAlbumUtils imageName:@"wk_navigation_back"] forState:UIControlStateNormal];
             backButton.frame = CGRectMake(15, statusH, 44, 44);
             backButton.imageEdgeInsets = UIEdgeInsetsMake(14.5, 0, 14.5, 0);
             backButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -33,7 +34,7 @@
         
         if (cancelAction) {
             UIButton *cancelButton = [[UIButton alloc] init];
-            cancelButton.frame = CGRectMake(width - 55, statusH, 50, 44);
+            cancelButton.frame = CGRectMake(width - 64, statusH, 50, 44);
             cancelButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
             [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
             [cancelButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];

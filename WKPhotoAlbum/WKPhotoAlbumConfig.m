@@ -19,7 +19,6 @@
         config.naviItemFont  = [UIFont systemFontOfSize:16];
         config.naviBgColor = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
         config.naviTitleColor = [UIColor whiteColor];
-        config.isIncludeAudio = NO;
         config.isIncludeImage = YES;
         config.isIncludeVideo = YES;
         config.maxSelectCount = 1;
@@ -41,7 +40,6 @@
     config.naviItemFont  = [UIFont systemFontOfSize:16];
     config.naviBgColor = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
     config.naviTitleColor = [UIColor whiteColor];
-    config.isIncludeAudio = NO;
     config.isIncludeImage = YES;
     config.isIncludeVideo = YES;
     config.maxSelectCount = 1;

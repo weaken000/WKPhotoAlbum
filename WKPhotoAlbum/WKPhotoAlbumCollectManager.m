@@ -106,41 +106,34 @@
 - (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
     
-    if (model.asset.mediaType == PHAssetMediaTypeAudio) {
-        if (model.playItem) {
-            resultHandler([UIImage imageNamed:@""], nil);
-            return;
-        }
-        PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
-        options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
-        [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                model.playItem = playerItem;
-                resultHandler([UIImage imageNamed:@""], nil);
-            });
-        }];
-    } else {
-        if (model.asset.mediaType == PHAssetMediaTypeVideo && model.playItem) {
+  if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
+        if (model.playItem && model.videoCaptureImage) {
             resultHandler(model.videoCaptureImage, nil);
             return;
         }
         [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-            if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
-                model.videoCaptureImage = result;
-                PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
-                options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
-                [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
-                    model.playItem = playerItem;
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        resultHandler(result, info);
-                    });
-                }];
-            } else {
+            model.videoCaptureImage = result;
+            PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+            options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
+            [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
+                model.playItem = playerItem;
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    resultHandler(result, info);
+                    resultHandler(model.videoCaptureImage, info);
                 });
-            }
+            }];
         }];
+    } else if (model.asset.mediaType == PHAssetMediaTypeImage) {//图片
+        if (model.clipImage) {
+            resultHandler(model.clipImage, nil);
+            return;
+        }
+        [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                resultHandler(result, info);
+            });
+        }];
+    } else {
+        resultHandler(nil, nil);
     }
 }
 
@@ -284,25 +277,62 @@
     }
 }
 
+- (void)triggerSelectArrayWhileClipImage {
+    [self triggerListenerWithKey:@"selectIndexArray" value:self.selectIndexArray];
+}
+
 - (void)requestSelectImage:(void (^)(NSArray * _Nullable))selectImages {
     NSMutableArray *resultArr = [NSMutableArray arrayWithCapacity:self.selectIndexArray.count];
     for (NSNumber *index in self.selectIndexArray) {
         WKPhotoAlbumModel *model = self.allPhotoArray[index.integerValue];
-        if (model.resultImage) {
-            [resultArr addObject:model.resultImage];
-        } else {
-            [self reqeustCollectionImageForIndexPath:[NSIndexPath indexPathForRow:index.integerValue inSection:0] resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-                if (result) {
-                    [resultArr addObject:result];
-                    if (resultArr.count == self.selectIndexArray.count) {
-                        selectImages(resultArr);
-                    }
+        if (model.asset.mediaType == PHAssetMediaTypeImage) {
+            if (model.clipImage) {
+                [resultArr addObject:model.clipImage];
+                if (resultArr.count == self.selectIndexArray.count) {
+                    selectImages(resultArr);
                 }
+            } else {
+                CGFloat scale = [UIScreen mainScreen].scale;
+                CGSize targetSize = CGSizeMake([UIScreen mainScreen].bounds.size.width * scale, ([UIScreen mainScreen].bounds.size.height * scale));
+                PHImageRequestOptions *options;
+                if (self.isUseOrigin) {
+                    options = [[PHImageRequestOptions alloc] init];
+                    options.resizeMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+                } else {
+                    options = self.reqeustImageOptions;
+                }
+                [self.cacheManager requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (result) {
+                            [resultArr addObject:result];
+                            if (resultArr.count == self.selectIndexArray.count) {
+                                selectImages(resultArr);
+                            }
+                        }
+                    });
+                }];
+            }
+        } else {
+            PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+            if (self.isUseOrigin) {
+                options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+            } else {
+                options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
+            }
+            [self.cacheManager requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (asset) {
+                        NSURL *url = [asset valueForKey:@"URL"];
+                        if (url) {
+                            [resultArr addObject:url];
+                            if (resultArr.count == self.selectIndexArray.count) {
+                                selectImages(resultArr);
+                            }
+                        }
+                    }
+                });
             }];
         }
-    }
-    if (resultArr.count == self.selectIndexArray.count) {
-        selectImages(resultArr);
     }
 }
 

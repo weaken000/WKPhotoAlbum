@@ -23,11 +23,15 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     UIButton                     *_selectButton;
     UIButton                     *_useOriginButton;
     UIButton                     *_preOrEditButton;
+    UILabel                      *_useOriginLabel;
+    UIView                       *_useOriginSelectView;
     UICollectionView             *_selectPreCollectionView;
     UIView                       *_lineView;
+    
     NSArray<WKPhotoAlbumModel *> *_previewAssetArr;
     BOOL                          _useForCollectVC;
     NSInteger                     _previewAssetIndex;
+    
 }
 
 - (instancetype)initWithFrame:(CGRect)frame useForCollectVC:(BOOL)useForCollectVC {
@@ -42,7 +46,10 @@ CGFloat const kActionViewLeftMargin     = 15.0;
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    [_useOriginButton sizeToFit];
+    [_useOriginLabel sizeToFit];
+    _useOriginSelectView.frame = CGRectMake(0, 0, 20, 20);
+    _useOriginButton.frame = CGRectMake(0, 0, _useOriginLabel.frame.size.width + 8 + 20, 20);
+    _useOriginLabel.frame = CGRectMake(28, (20 - _useOriginLabel.frame.size.height) * 0.5, _useOriginLabel.frame.size.width, _useOriginLabel.frame.size.height);
     
     _selectPreCollectionView.frame = CGRectMake(0, 0, self.frame.size.width, kActionViewPreViewHeight);
     if (_useForCollectVC) {
@@ -85,7 +92,7 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     }
 
     _preOrEditButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_preOrEditButton setTitle:(_useForCollectVC ? @"预览" : @"编辑") forState:UIControlStateNormal];
+    [_preOrEditButton setTitle:(_useForCollectVC ? @"预览" : @"裁剪") forState:UIControlStateNormal];
     _preOrEditButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
     _preOrEditButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     [_preOrEditButton addTarget:self action:@selector(click_preview) forControlEvents:UIControlEventTouchUpInside];
@@ -94,10 +101,27 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     [self addSubview:_preOrEditButton];
     
     _useOriginButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_useOriginButton setTitle:@"使用原图" forState:UIControlStateNormal];
-    [_useOriginButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
-    [_useOriginButton setTitleColor:[UIColor redColor] forState:UIControlStateSelected];
-    _useOriginButton.titleLabel.font = [UIFont systemFontOfSize:16];
+    
+    _useOriginLabel = [[UILabel alloc] init];
+    _useOriginLabel.font = [UIFont systemFontOfSize:14];
+    _useOriginLabel.textColor = [WKPhotoAlbumConfig sharedConfig].naviTitleColor;
+    _useOriginLabel.text = @"原图";
+    [_useOriginButton addSubview:_useOriginLabel];
+    
+    _useOriginSelectView = [[UIView alloc] init];
+    _useOriginSelectView.layer.cornerRadius = 10.0;
+    _useOriginSelectView.layer.borderColor = [WKPhotoAlbumConfig sharedConfig].naviTitleColor.CGColor;
+    _useOriginSelectView.layer.borderWidth = 1.0;
+    _useOriginSelectView.layer.masksToBounds = YES;
+    _useOriginSelectView.userInteractionEnabled = NO;
+    _useOriginSelectView.backgroundColor = [UIColor clearColor];
+    CALayer *fillLayer = [CALayer layer];
+    fillLayer.backgroundColor = [WKPhotoAlbumConfig sharedConfig].selectColor.CGColor;
+    fillLayer.frame = CGRectMake(2, 2, 16, 16);
+    fillLayer.cornerRadius = 8;
+    [_useOriginSelectView.layer addSublayer:fillLayer];
+    [_useOriginButton addSubview:_useOriginSelectView];
+    
     [_useOriginButton addTarget:self action:@selector(click_useOrigin) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:_useOriginButton];
     
@@ -123,7 +147,8 @@ CGFloat const kActionViewLeftMargin     = 15.0;
 }
 - (void)managerValueChangedForKey:(NSString *)key withValue:(id)value {
     if ([key isEqualToString:@"isUseOrigin"]) {//是否使用原图
-        _useOriginButton.selected = [value boolValue];
+        BOOL isUseOrigin = [value boolValue];
+        _useOriginSelectView.layer.sublayers.firstObject.hidden = !isUseOrigin;
     } else if ([key isEqualToString:@"selectIndexArray"]) {//选择的数组变化
         //改变选择按钮状态
         BOOL enable = (self.manager.selectIndexArray.count > 0);
@@ -181,7 +206,7 @@ CGFloat const kActionViewLeftMargin     = 15.0;
 }
 - (void)click_useOrigin {
     if ([self.delegate respondsToSelector:@selector(actionViewDidClickUseOrigin:useOrigin:)]) {
-        [self.delegate actionViewDidClickUseOrigin:self useOrigin:!_useOriginButton.isSelected];
+        [self.delegate actionViewDidClickUseOrigin:self useOrigin:_useOriginSelectView.layer.sublayers.firstObject.isHidden];
     }
 }
 - (void)click_select {
@@ -199,8 +224,8 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     cell.cellType = WKPhotoAlbumCellTypeSubPreview;
     cell.albumInfo = model;
-    if (model.resultImage) {
-        cell.image = model.resultImage;
+    if (model.clipImage) {
+        cell.image = model.clipImage;
     } else {
         [_manager reqeustCollectionImageForIndexPath:[NSIndexPath indexPathForRow:model.collectIndex inSection:0] resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {

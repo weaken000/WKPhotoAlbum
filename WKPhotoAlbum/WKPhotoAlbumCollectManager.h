@@ -24,13 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSInteger collectIndex;
 
 @property (nonatomic, assign) NSInteger selectIndex;
-
-@property (nonatomic, strong, nullable) UIImage *resultImage;
+//裁剪后的图片
+@property (nonatomic, strong, nullable) UIImage *clipImage;
 
 @property (nonatomic, strong, nullable) PHAsset *asset;
 
 @property (nonatomic, strong, nullable) AVPlayerItem *playItem;
-
+//播放资源的封面图
 @property (nonatomic, strong, nullable) UIImage *videoCaptureImage;
 
 @property (nonatomic, copy  , readonly, nullable) NSString *assetDuration;
@@ -72,6 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)requestSelectImage:(void (^)(NSArray * __nullable images))selectImages;
 
+- (void)triggerSelectArrayWhileClipImage;
 @end
 
 NS_ASSUME_NONNULL_END

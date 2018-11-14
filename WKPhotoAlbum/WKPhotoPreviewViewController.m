@@ -10,7 +10,6 @@
 
 #import "WKPhotoPreviewTransition.h"
 #import "WKPhotoAlbumConfig.h"
-#import "WKPhotoAlbumUtils.h"
 
 #import "WKPhotoCollectBottomView.h"
 #import "WKPhotoAlbumPreviewCell.h"
@@ -28,15 +27,15 @@ WKPhotoCollectBottomViewDelegate,
 WKPhotoAlbumPreviewCellDelegate
 >
 
-@property (nonatomic, strong) UICollectionView  *previewCollectionView;
+@property (nonatomic, strong) UICollectionView             *previewCollectionView;
 
-@property (nonatomic, strong) UIImageView   *clipMaskImageView;
+@property (nonatomic, strong) UIImageView                  *clipMaskImageView;
 
-@property (nonatomic, strong) WKPhotoCollectBottomView *actionView;
+@property (nonatomic, strong) WKPhotoCollectBottomView     *actionView;
 
 @property (nonatomic, strong) WKPhotoPreviewNavigationView *navigationView;
 
-@property (nonatomic, strong) WKPhotoAlbumMediaPlayer *player;
+@property (nonatomic, strong) WKPhotoAlbumMediaPlayer      *player;
 
 @end
 
@@ -193,8 +192,8 @@ WKPhotoAlbumPreviewCellDelegate
     cell.delegate = self;
     WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
     cell.albumInfo = model;
-    if (model.resultImage) {
-        cell.image = model.resultImage;
+    if (model.clipImage) {
+        cell.image = model.clipImage;
     } else {
         [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
@@ -342,7 +341,8 @@ WKPhotoAlbumPreviewCellDelegate
     
     [self intoEditMode:NO];
     cell.image = newImage;
-    self.manager.allPhotoArray[self.manager.currentPreviewIndex].resultImage = newImage;
+    self.manager.allPhotoArray[self.manager.currentPreviewIndex].clipImage = newImage;
+    [self.manager triggerSelectArrayWhileClipImage];
 }
 
 #pragma mark - Action

@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)presentAlbumVCWithSelectBlock:(nullable void(^)(NSArray *result))selectBlock
                                         cancelBlock:(nullable void(^)(void))cancelBlock;
 
-+ (void)setPhotoAlbumDelegate:(id<WKPhotoAlbumDelegate>)delegate;
++ (void)setPhotoAlbumDelegate:(nullable id<WKPhotoAlbumDelegate>)delegate;
 
 @end
 

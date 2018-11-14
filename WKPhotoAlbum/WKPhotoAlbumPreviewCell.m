@@ -9,14 +9,15 @@
 #import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoAlbumSelectButton.h"
 #import "WKPhotoAlbumCollectManager.h"
+#import "WKPhotoAlbumUtils.h"
 
 @interface WKPhotoAlbumPreviewCell()<UIScrollViewDelegate>
 
 @property (nonatomic, strong) WKPhotoAlbumSelectButton *selectButton;
 
-@property (nonatomic, strong) UIImageView *videoTypeImageView;
+@property (nonatomic, strong) UIImageView              *videoTypeImageView;
 
-@property (nonatomic, strong) UILabel *videoLengthLabel;
+@property (nonatomic, strong) UILabel                  *videoLengthLabel;
 
 @end
 
@@ -30,7 +31,7 @@
         _imageView.frame = self.bounds;
     }
     _imageContentScrollView.frame = self.bounds;
-    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 32, 2, 30, 30);
+    _selectButton.frame = CGRectMake(self.contentView.bounds.size.width - 26, 2, 24, 24);
     _videoContentView.frame = _imageView.bounds;
     CGFloat controlW = 75;
     _videoStartBtn.frame = CGRectMake((self.bounds.size.width - controlW) / 2.0, (self.bounds.size.height - controlW) / 2.0, controlW, controlW);
@@ -132,20 +133,20 @@
         return;
     }
     if (_cellType == WKPhotoAlbumCellTypeCollect) {
-        if (albumInfo.asset.mediaType != PHAssetMediaTypeImage) {
-            self.videoLengthLabel.hidden = NO;
-            self.videoTypeImageView.hidden = NO;
-        } else {
+        if (albumInfo.asset.mediaType == PHAssetMediaTypeImage) {
             _videoLengthLabel.hidden = YES;
             _videoTypeImageView.hidden = YES;
+        } else {
+            self.videoLengthLabel.hidden = NO;
+            self.videoTypeImageView.hidden = NO;
         }
         return;
     }
     if (_cellType == WKPhotoAlbumCellTypeSubPreview) {
-        if (albumInfo.asset.mediaType != PHAssetMediaTypeImage) {
-            self.videoTypeImageView.hidden = NO;
-        } else {
+        if (albumInfo.asset.mediaType == PHAssetMediaTypeImage) {
             _videoTypeImageView.hidden = YES;
+        } else {
+            self.videoTypeImageView.hidden = NO;
         }
         return;
     }
@@ -207,7 +208,7 @@
 - (UIButton *)videoStartBtn {
     if (!_videoStartBtn) {
         _videoStartBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_videoStartBtn setBackgroundImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_play.png"] forState:UIControlStateNormal];
+        [_videoStartBtn setBackgroundImage:[WKPhotoAlbumUtils imageName:@"wk_video_play"] forState:UIControlStateNormal];
         [_videoStartBtn addTarget:self action:@selector(click_startButton) forControlEvents:UIControlEventTouchUpInside];
         [self.videoContentView addSubview:_videoStartBtn];
     }
@@ -216,7 +217,7 @@
 
 - (UIImageView *)videoTypeImageView {
     if (!_videoTypeImageView) {
-        _videoTypeImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_video_icon.png"]];
+        _videoTypeImageView = [[UIImageView alloc] initWithImage:[WKPhotoAlbumUtils imageName:@"wk_video_icon"]];
         _videoTypeImageView.contentMode = UIViewContentModeScaleAspectFit;
         [self.imageView addSubview:_videoTypeImageView];
     }

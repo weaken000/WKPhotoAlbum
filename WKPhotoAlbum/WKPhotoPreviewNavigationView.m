@@ -9,6 +9,7 @@
 #import "WKPhotoPreviewNavigationView.h"
 #import "WKPhotoAlbumSelectButton.h"
 #import "WKPhotoAlbumConfig.h"
+#import "WKPhotoAlbumUtils.h"
 
 @implementation WKPhotoPreviewNavigationView {
     UIButton *_leftButton;
@@ -58,7 +59,7 @@
 
 - (void)toEditMode:(BOOL)editMode {
     if (!editMode) {
-        [_leftButton setImage:[UIImage imageNamed:@"WKPhotoAlbum.bundle/wk_navigation_back.png"] forState:UIControlStateNormal];
+        [_leftButton setImage:[WKPhotoAlbumUtils imageName:@"wk_navigation_back"] forState:UIControlStateNormal];
         [_leftButton setTitle:nil forState:UIControlStateNormal];
         _selectButton.hidden = NO;
         _rightButton.hidden = YES;

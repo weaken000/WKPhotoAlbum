@@ -51,9 +51,6 @@
             if (obj.mediaType == PHAssetMediaTypeImage && config.isIncludeImage) {
                 [assetArr addObject:obj];
             }
-            if (obj.mediaType == PHAssetMediaTypeAudio && config.isIncludeAudio) {
-                [assetArr addObject:obj];
-            }
         }];
         return assetArr;
     }
@@ -62,6 +59,21 @@
 
 + (UIColor *)r:(CGFloat)r g:(CGFloat)g b:(CGFloat)b a:(CGFloat)a {
     return [UIColor colorWithRed:r / 255.0 green:g / 255.0 blue:b / 255.0 alpha:a];
+}
+
++ (UIImage *)imageName:(NSString *)imageName {
+    CGFloat scale = [UIScreen mainScreen].scale;
+    NSString *bundlePath = [[NSBundle mainBundle] pathForResource:@"WKPhotoAlbum" ofType:@"bundle"];
+    NSBundle *bundle = [NSBundle bundleWithPath:bundlePath];
+    NSString *path;
+    if (ABS(scale - 3) <= 0.001) {
+        path = [bundle pathForResource:[NSString stringWithFormat:@"%@@3x", imageName] ofType:@"png"];
+    } else if (ABS(scale - 2) <= 0.001) {
+        path = [bundle pathForResource:[NSString stringWithFormat:@"%@@2x", imageName] ofType:@"png"];
+    } else {
+        path = [bundle pathForResource:imageName ofType:@"png"];
+    }
+    return [UIImage imageWithContentsOfFile:path];
 }
 
 @end
