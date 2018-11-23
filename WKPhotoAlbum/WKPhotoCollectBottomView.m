@@ -90,15 +90,17 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     } else {
         self.backgroundColor = [WKPhotoAlbumConfig sharedConfig].bottomBarColorWhileCollect;
     }
-
-    _preOrEditButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_preOrEditButton setTitle:(_useForCollectVC ? @"预览" : @"裁剪") forState:UIControlStateNormal];
-    _preOrEditButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
-    _preOrEditButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    [_preOrEditButton addTarget:self action:@selector(click_preview) forControlEvents:UIControlEventTouchUpInside];
-    _preOrEditButton.enabled = YES;
-    [_preOrEditButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
-    [self addSubview:_preOrEditButton];
+    
+    if (_useForCollectVC || (!_useForCollectVC && [WKPhotoAlbumConfig sharedConfig].canClip)) {
+        _preOrEditButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_preOrEditButton setTitle:(_useForCollectVC ? @"预览" : @"裁剪") forState:UIControlStateNormal];
+        _preOrEditButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
+        _preOrEditButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+        [_preOrEditButton addTarget:self action:@selector(click_preview) forControlEvents:UIControlEventTouchUpInside];
+        _preOrEditButton.enabled = YES;
+        [_preOrEditButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
+        [self addSubview:_preOrEditButton];
+    }
     
     _useOriginButton = [UIButton buttonWithType:UIButtonTypeCustom];
     

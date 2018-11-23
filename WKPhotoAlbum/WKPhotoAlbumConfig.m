@@ -22,9 +22,11 @@
         config.isIncludeImage = YES;
         config.isIncludeVideo = YES;
         config.maxSelectCount = 1;
-        config.canClipWhileSingle = NO;
+        config.canClip = NO;
         config.numberOfLine = 4;
         config.lineSpace = 5;
+        config.allowTakePicture = YES;
+        config.allowTakeVideo = YES;
         config.selectColor = [UIColor colorWithRed:39 / 255.0 green:170 / 255.0 blue:45 / 255.0 alpha:1.0];
         config.bottomBarColorWhileCollect = [UIColor colorWithRed:42 / 255.0 green:47 / 255.0 blue:55 / 255.0 alpha:1.0];
         config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
@@ -43,9 +45,11 @@
     config.isIncludeImage = YES;
     config.isIncludeVideo = YES;
     config.maxSelectCount = 1;
-    config.canClipWhileSingle = NO;
+    config.canClip = NO;
     config.numberOfLine = 4;
     config.lineSpace = 5;
+    config.allowTakePicture = YES;
+    config.allowTakeVideo = YES;
     config.selectColor = [UIColor colorWithRed:39 / 255.0 green:170 / 255.0 blue:45 / 255.0 alpha:1.0];
     config.bottomBarColorWhileCollect = [UIColor colorWithRed:42 / 255.0 green:47 / 255.0 blue:55 / 255.0 alpha:1.0];
     config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];

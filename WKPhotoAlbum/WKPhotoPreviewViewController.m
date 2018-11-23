@@ -157,6 +157,7 @@ WKPhotoAlbumPreviewCellDelegate
 
 #pragma mark - WKPhotoCollectBottomViewDelegate
 - (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView {
+    __weak typeof(self) weakSelf = self;
     [self.manager requestSelectImage:^(NSArray * _Nullable images) {
         WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
         if ([config.delegate respondsToSelector:@selector(photoAlbumDidSelectResult:)]) {
@@ -165,9 +166,9 @@ WKPhotoAlbumPreviewCellDelegate
         if (config.selectBlock) {
             config.selectBlock(images);
         }
-        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        [weakSelf.navigationController dismissViewControllerAnimated:YES completion:nil];
         [WKPhotoAlbumConfig clearReback];
-        [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
+        [weakSelf.manager removeAllListener];
     }];
 }
 - (void)actionViewDidClickPreOrEditView:(WKPhotoCollectBottomView *)actionView {
@@ -381,6 +382,7 @@ WKPhotoAlbumPreviewCellDelegate
         case UIGestureRecognizerStateCancelled: {
             if (cell.imageView.transform.a <= 0.6) {
                 [self.navigationController popViewControllerAnimated:YES];
+                [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
             } else {
                 [UIView animateWithDuration:0.2 animations:^{
                     cell.imageView.transform = CGAffineTransformIdentity;

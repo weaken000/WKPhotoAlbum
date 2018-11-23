@@ -36,7 +36,7 @@
     }];
 }
 
-+ (NSMutableArray<PHAsset *> *)readSmartAlbumInConfig {
++ (NSDictionary *)readSmartAlbumInConfig {
     
     PHFetchResult<PHAssetCollection *> *smartAlbums = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum subtype:PHAssetCollectionSubtypeSmartAlbumUserLibrary options:nil];
     for (PHAssetCollection *collection in smartAlbums) {
@@ -52,7 +52,8 @@
                 [assetArr addObject:obj];
             }
         }];
-        return assetArr;
+        return @{@"collection": collection,
+                 @"asset": assetArr};
     }
     return nil;
 }

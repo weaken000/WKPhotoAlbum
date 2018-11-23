@@ -43,15 +43,19 @@
 @end
 
 @implementation WKPhotoAlbumCollectManager {
-    CGRect _previousPreheatRect;
+    CGRect                _previousPreheatRect;
+    PHAssetCollection    *_assetCollection;
 }
 
-- (instancetype)initWithAssets:(NSArray<PHAsset *> *)assets {
-    if (!assets) {
-        assets = [WKPhotoAlbumUtils readSmartAlbumInConfig];
-    }
+- (instancetype)initWithAssets:(NSArray<PHAsset *> *)assets assetCollection:(PHAssetCollection *)assetCollection {
     if (self == [super init]) {
         
+        if (!assets) {
+            NSDictionary *assetDict = [WKPhotoAlbumUtils readSmartAlbumInConfig];
+            assets = assetDict[@"asset"];
+            assetCollection = assetDict[@"collection"];
+        }
+        _assetCollection = assetCollection;
         _allPhotoArray = [NSMutableArray array];
         [assets enumerateObjectsUsingBlock:^(PHAsset * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
             WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
@@ -102,6 +106,53 @@
     [self triggerListenerWithKey:@"selectIndexArray" value:self.selectIndexArray];
 }
 
+- (void)addPhotoIntoCollection:(UIImage *)image completed:(void (^)(BOOL, NSString *))completed {
+    __block NSString *assetId = nil;
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        assetId = [PHAssetCreationRequest creationRequestForAssetFromImage:image].placeholderForCreatedAsset.localIdentifier;
+    } completionHandler:^(BOOL success, NSError * _Nullable error) {
+        if (success) {
+            PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+            //当前已经处于相机胶卷相册，不需要再次添加
+            if (_assetCollection.assetCollectionType == PHAssetCollectionTypeSmartAlbum && _assetCollection.assetCollectionSubtype == PHAssetCollectionSubtypeSmartAlbumUserLibrary) {
+                PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+                WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
+                model.collectIndex = _allPhotoArray.count;
+                model.asset = asset;
+                [_allPhotoArray addObject:model];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self addSelectWithIndex:model.collectIndex];
+                    completed(YES, nil);
+                });
+            } else {
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    PHAssetCollectionChangeRequest *request = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:_assetCollection];
+                    [request addAssets:@[asset]];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    if (success) {
+                        PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+                        WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
+                        model.collectIndex = _allPhotoArray.count;
+                        model.asset = asset;
+                        [_allPhotoArray addObject:model];
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self addSelectWithIndex:model.collectIndex];
+                            completed(YES, nil);
+                        });
+                    } else {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            completed(NO, @"添加到相册失败，请重新添加");
+                        });
+                    }
+                }];
+            }
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completed(NO, @"添加到相册失败，请重新添加");
+            });
+        }
+    }];
+}
 
 - (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
@@ -269,6 +320,10 @@
     [self.listeners removeObject:listener];
 }
 
+- (void)removeAllListener {
+    [self.listeners removeAllObjects];
+}
+
 - (void)triggerListenerWithKey:(NSString *)key value:(id)value {
     for (id<WKPhotoAlbumCollectManagerChanged> listener in self.listeners) {
         if ([listener inListening]) {//
@@ -363,10 +418,6 @@
         _listeners = [NSMutableArray array];
     }
     return _listeners;
-}
-
-- (void)dealloc {
-    [_listeners removeAllObjects];
 }
 
 @end

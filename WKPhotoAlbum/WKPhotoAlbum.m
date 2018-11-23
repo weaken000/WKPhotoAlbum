@@ -20,7 +20,8 @@
     [WKPhotoAlbumConfig sharedConfig].cancelBlock = [cancelBlock copy];
 
     WKPhotoAlbumViewController *rootVC = [[WKPhotoAlbumViewController alloc] init];
-    UINavigationController *navitionController = [[UINavigationController alloc] initWithRootViewController:rootVC];WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];
+    UINavigationController *navitionController = [[UINavigationController alloc] initWithRootViewController:rootVC];
+    WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];
     [navitionController pushViewController:allPhotoVC animated:NO];
     [navitionController setNavigationBarHidden:YES];
     return navitionController;

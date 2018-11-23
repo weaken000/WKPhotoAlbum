@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
                          synchronous:(BOOL)synchronous
                             complete:(nullable void (^)(UIImage * _Nullable image))complete;
 
-+ (NSMutableArray<PHAsset *> *)readSmartAlbumInConfig;
++ (NSDictionary *)readSmartAlbumInConfig;
 
 + (UIColor *)r:(CGFloat)r g:(CGFloat)g b:(CGFloat)b a:(CGFloat)a;
 

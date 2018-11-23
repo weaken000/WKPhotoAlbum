@@ -53,12 +53,15 @@ NS_ASSUME_NONNULL_BEGIN
 //default is 1
 @property (nonatomic, assign) NSUInteger maxSelectCount;
 //default is NO
-@property (nonatomic, assign) BOOL canClipWhileSingle;
+@property (nonatomic, assign) BOOL canClip;
 //default is 4
 @property (nonatomic, assign) NSUInteger numberOfLine;
 //default is 5
 @property (nonatomic, assign) CGFloat lineSpace;
-
+//default is YES
+@property (nonatomic, assign) BOOL allowTakePicture;
+//default is YES
+@property (nonatomic, assign) BOOL allowTakeVideo;
 
 @property (nonatomic, copy  , nullable) void (^ selectBlock)(NSArray *result);
 

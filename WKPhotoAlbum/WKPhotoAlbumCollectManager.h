@@ -55,11 +55,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) BOOL isUseOrigin;
 
-- (instancetype)initWithAssets:(NSArray<PHAsset *> *)assets;
+- (instancetype)initWithAssets:(nullable NSArray<PHAsset *> *)assets assetCollection:(nullable PHAssetCollection *)assetCollection;
 
 - (NSIndexPath *)addSelectWithIndex:(NSInteger)index;
 
 - (void)cancelSelectIndex:(NSInteger)index;
+//往当前相册中添加图片
+- (void)addPhotoIntoCollection:(UIImage *)image completed:(void (^)(BOOL success, NSString *errorMsg))completed;
 
 - (void)updateCacheForCollectionView:(UICollectionView *)collectionView withOffset:(CGPoint)offset;
 
@@ -69,6 +71,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addChangedListener:(id<WKPhotoAlbumCollectManagerChanged>)listener;
 
 - (void)removeListener:(id<WKPhotoAlbumCollectManagerChanged>)listener;
+
+- (void)removeAllListener;
 
 - (void)requestSelectImage:(void (^)(NSArray * __nullable images))selectImages;
 

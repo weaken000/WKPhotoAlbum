@@ -9,99 +9,16 @@
 #import "WKPhotoCollectionViewController.h"
 #import "WKPhotoPreviewViewController.h"
 #import "WKPhotoAlbumViewController.h"
+#import "WKPhotoAlbumCameraViewController.h"
 
 #import "WKPhotoAlbumPreviewCell.h"
 #import "WKPhotoCollectBottomView.h"
 #import "WKPhotoAlbumNormalNaviBar.h"
+#import "WKPhotoAlbumAuthorizationView.h"
 
 #import "WKPhotoAlbumConfig.h"
 #import "WKPhotoAlbumCollectManager.h"
 #import "WKPhotoAlbumUtils.h"
-
-@interface WKPhotoAlbumAuthorizationView : UIView
-
-@property (nonatomic, copy, nullable) void (^ jumpToSetting)(void);
-
-@property (nonatomic, copy, nullable) void (^ requestBlock)(void);
-
-- (void)configAuthStatus:(PHAuthorizationStatus)authStatus;
-
-@end
-
-@implementation WKPhotoAlbumAuthorizationView {
-    UIButton    *_requestAuthBtn;
-    UIButton    *_jumpToSettingBtn;
-    UILabel     *_deniedTipLabel;
-    UIImageView *_deniedTipImageView;
-}
-
-- (void)configAuthStatus:(PHAuthorizationStatus)authStatus {
-    if (authStatus == PHAuthorizationStatusAuthorized) {
-        self.hidden = YES;
-    } else if (authStatus == PHAuthorizationStatusDenied || authStatus == PHAuthorizationStatusRestricted) {
-        _requestAuthBtn.hidden = YES;
-        if (!_jumpToSettingBtn) {
-            _deniedTipLabel = [[UILabel alloc] init];
-            _deniedTipLabel.textAlignment = NSTextAlignmentCenter;
-            _deniedTipLabel.numberOfLines = 0;
-            _deniedTipLabel.font = [UIFont systemFontOfSize:18];
-            _deniedTipLabel.textColor = [UIColor blackColor];
-            _deniedTipLabel.text = @"获取相册被拒绝，请在iPhone的\"设置-隐私-照片\"中允许访问照片";
-            [self addSubview:_deniedTipLabel];
-            
-            _deniedTipImageView = [[UIImageView alloc] init];
-            _deniedTipImageView.image = [WKPhotoAlbumUtils imageName:@"wk_auth_lock"];
-            [self addSubview:_deniedTipImageView];
-            
-            _jumpToSettingBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            _jumpToSettingBtn.titleLabel.font = [UIFont systemFontOfSize:16.0];
-            [_jumpToSettingBtn setTitle:@"前往设置" forState:UIControlStateNormal];
-            [_jumpToSettingBtn addTarget:self action:@selector(click_jumpToSetting) forControlEvents:UIControlEventTouchUpInside];
-            [_jumpToSettingBtn sizeToFit];
-            [self addSubview:_jumpToSettingBtn];
-            
-            _deniedTipImageView.frame = CGRectMake(0, 0, 120, 120);
-            _deniedTipImageView.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame) - 60);
-            _jumpToSettingBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMaxY(_deniedTipImageView.frame) + 30);
-            CGSize labelSize = [_deniedTipLabel sizeThatFits:CGSizeMake(self.frame.size.width - 60, CGFLOAT_MAX)];
-            _deniedTipLabel.frame = CGRectMake((self.frame.size.width - labelSize.width) * 0.5, CGRectGetMinY(_deniedTipImageView.frame) - 20 - labelSize.height, labelSize.width, labelSize.height);
-            
-        }
-        _jumpToSettingBtn.hidden = NO;
-        _deniedTipLabel.hidden = NO;
-        _deniedTipImageView.hidden = NO;
-        self.hidden = NO;
-    } else {
-        _jumpToSettingBtn.hidden = YES;
-        _deniedTipLabel.hidden = YES;
-        _deniedTipImageView.hidden = YES;
-        if (!_requestAuthBtn) {
-            _requestAuthBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            _requestAuthBtn.titleLabel.font = [UIFont systemFontOfSize:16.0];
-            [_requestAuthBtn setTitle:@"开启相册权限" forState:UIControlStateNormal];
-            [_requestAuthBtn addTarget:self action:@selector(click_requestAuthBtn) forControlEvents:UIControlEventTouchUpInside];
-            [self addSubview:_requestAuthBtn];
-            [_requestAuthBtn sizeToFit];
-            _requestAuthBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame));
-        }
-        _requestAuthBtn.hidden = NO;
-        self.hidden = NO;
-    }
-}
-
-- (void)click_requestAuthBtn {
-    if (_requestBlock) {
-        _requestBlock();
-    }
-}
-
-- (void)click_jumpToSetting {
-    if (_jumpToSetting) {
-        _jumpToSetting();
-    }
-}
-
-@end
 
 @interface WKPhotoCollectionViewController ()
 <
@@ -109,7 +26,8 @@ UICollectionViewDelegate,
 UICollectionViewDataSource,
 WKPhotoAlbumPreviewCellDelegate,
 WKPhotoCollectBottomViewDelegate,
-WKPhotoAlbumCollectManagerChanged
+WKPhotoAlbumCollectManagerChanged,
+WKPhotoAlbumCameraViewControllerDelegate
 >
 
 @property (nonatomic, strong) UICollectionView              *collectionView;
@@ -125,7 +43,6 @@ WKPhotoAlbumCollectManagerChanged
 @end
 
 @implementation WKPhotoCollectionViewController {
-    PHAuthorizationStatus _photoAuthorization;
     NSInteger             _maxCount;
     NSUInteger            _numberOfLine;
     CGFloat               _lineSpace;
@@ -160,14 +77,13 @@ WKPhotoAlbumCollectManagerChanged
 
 #pragma mark - initializeInstall
 - (void)requestAuthorization {
-    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
-    _photoAuthorization = status;
-    if (status == PHAuthorizationStatusAuthorized) {//已获得权限
-        [self installManager];
-        [self setupSubviews];
-    } else {
-        [self.authorizationView configAuthStatus:status];
-    }
+    __weak typeof(self) weakSelf = self;
+    [self.authorizationView requestAuthorizationForType:WKAuthorizationTypeAlbum handle:^(PHAuthorizationStatus albumStatus, AVAuthorizationStatus avStatus, AVAuthorizationStatus micStatus) {
+        if (albumStatus == PHAuthorizationStatusAuthorized) {//已获得权限
+            [weakSelf installManager];
+            [weakSelf setupSubviews];
+        }
+    }];
 }
 
 #pragma mark -
@@ -175,15 +91,16 @@ WKPhotoAlbumCollectManagerChanged
     
     WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
     NSArray<PHAsset *> *asset;
+    PHAssetCollection *assetCollection;
     //获取资源
     if (self.assetDict) {
-        PHAssetCollection *collection = self.assetDict[@"collection"];
-        self.navigationView.title = collection.localizedTitle?:@"照片";
+        assetCollection = self.assetDict[@"collection"];
+        self.navigationView.title = assetCollection.localizedTitle?:@"照片";
         asset = self.assetDict[@"asset"];
     } else {
         self.navigationView.title = @"所有照片";
     }
-    _manager = [[WKPhotoAlbumCollectManager alloc] initWithAssets:asset];
+    _manager = [[WKPhotoAlbumCollectManager alloc] initWithAssets:asset assetCollection:assetCollection];
     PHImageRequestOptions *reqeustOptions = [[PHImageRequestOptions alloc] init];
     reqeustOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
     reqeustOptions.synchronous = NO;
@@ -240,11 +157,12 @@ WKPhotoAlbumCollectManagerChanged
 
 #pragma mark - action
 - (void)click_backButton {
-    if (_photoAuthorization != PHAuthorizationStatusAuthorized) {
+    if (self.authorizationView.albumStatus != PHAuthorizationStatusAuthorized) {
         [self click_cancelButton];
-    } else {
-        [self.navigationController popViewControllerAnimated:YES];
+        return;
     }
+    
+    [self.navigationController popViewControllerAnimated:YES];
     [self.manager removeListener:(id<WKPhotoAlbumCollectManagerChanged>)self.actionView];
     [self.manager removeListener:self];
 }
@@ -258,6 +176,12 @@ WKPhotoAlbumCollectManagerChanged
         config.cancelBlock();
     }
     [self popAndClearData];
+}
+
+- (void)click_takePhotoButton {
+    WKPhotoAlbumCameraViewController *next = [[WKPhotoAlbumCameraViewController alloc] init];
+    next.delegate = self;
+    [self.navigationController pushViewController:next animated:YES];
 }
 
 - (void)pushToPreviewWithIndexPath:(NSIndexPath *)indexPath {
@@ -335,6 +259,7 @@ WKPhotoAlbumCollectManagerChanged
 }
 
 - (void)actionViewDidClickSelect:(WKPhotoCollectBottomView *)actionView {
+    __weak typeof(self) weakSelf = self;
     [self.manager requestSelectImage:^(NSArray * _Nullable images) {
         WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
         if ([config.delegate respondsToSelector:@selector(photoAlbumDidSelectResult:)]) {
@@ -343,7 +268,7 @@ WKPhotoAlbumCollectManagerChanged
         if (config.selectBlock) {
             config.selectBlock(images);
         }
-        [self popAndClearData];
+        [weakSelf popAndClearData];
     }];
 }
 
@@ -358,11 +283,13 @@ WKPhotoAlbumCollectManagerChanged
     cell.albumInfo = model;
     cell.delegate  = self;
     cell.selectIndex = model.selectIndex;
+    __weak typeof(cell) weakCell = cell;
+    __weak typeof(model) weakModel = model;
     [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-        if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
-            cell.image = result;
+        if ([weakCell.albumInfo.asset.localIdentifier isEqualToString:weakModel.asset.localIdentifier] && result) {
+            weakCell.image = result;
         } else {
-            cell.image = nil;
+            weakCell.image = nil;
         }
     }];
     return cell;
@@ -405,35 +332,31 @@ WKPhotoAlbumCollectManagerChanged
     return YES;
 }
 
+#pragma mark - UIImagePickerControllerDelegate
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    UIImage *image = info[UIImagePickerControllerOriginalImage];
+    __weak typeof(self) weakSelf = self;
+    [self.manager addPhotoIntoCollection:image completed:^(BOOL success, NSString * _Nonnull errorMsg) {
+        if (success) {
+            [weakSelf.collectionView reloadData];
+        }
+    }];
+}
+
 #pragma mark - lazy load
 - (WKPhotoAlbumAuthorizationView *)authorizationView {
     if (!_authorizationView) {
         _authorizationView = [[WKPhotoAlbumAuthorizationView alloc] initWithFrame:self.view.bounds];
         [self.view addSubview:_authorizationView];
-        
         __weak typeof(self) weakSelf = self;
-        _authorizationView.jumpToSetting = ^{
-            NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
-            if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                if (@available(iOS 10.0, *)) {
-                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {}];
-                } else {
-                    [[UIApplication sharedApplication] openURL:url];
-                }
-            }
-        };
-        _authorizationView.requestBlock = ^{
-            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    __strong typeof(weakSelf) strongSelf = weakSelf;
-                    if (status == PHAuthorizationStatusAuthorized) {
-                        [strongSelf installManager];
-                        [strongSelf setupSubviews];
-                    }
-                    [strongSelf.authorizationView configAuthStatus:status];
-                    strongSelf->_photoAuthorization = status;
-                });
-            }];
+        _authorizationView.authChanged = ^(PHAuthorizationStatus albumStatus, AVAuthorizationStatus cameraStatus, AVAuthorizationStatus micStatus) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [strongSelf installManager];
+            [strongSelf setupSubviews];
         };
     }
     return _authorizationView;
@@ -441,7 +364,11 @@ WKPhotoAlbumCollectManagerChanged
 
 - (WKPhotoAlbumNormalNaviBar *)navigationView {
     if (!_navigationView) {
-        _navigationView = [[WKPhotoAlbumNormalNaviBar alloc] initWithTarget:self popAction:@selector(click_backButton) cancelAction:@selector(click_cancelButton)];
+        if ([WKPhotoAlbumConfig sharedConfig].allowTakePicture) {
+            _navigationView = [[WKPhotoAlbumNormalNaviBar alloc] initWithTarget:self popAction:@selector(click_backButton) takePhotoAction:@selector(click_takePhotoButton) cancelAction:@selector(click_cancelButton)];
+        } else {
+            _navigationView = [[WKPhotoAlbumNormalNaviBar alloc] initWithTarget:self popAction:@selector(click_backButton) cancelAction:@selector(click_cancelButton)];
+        }
         [self.view addSubview:_navigationView];
     }
     return _navigationView;

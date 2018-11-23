@@ -33,13 +33,17 @@
     [super viewDidLoad];
 
     self.view.backgroundColor = [UIColor whiteColor];
-    [self readPhotoCollect];
     [self setupSubviews];
 }
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     _tableView.frame = CGRectMake(0, CGRectGetMaxY(self.navigationBar.frame), self.view.bounds.size.width, self.view.bounds.size.height - CGRectGetHeight(self.navigationBar.frame));
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self readPhotoCollect];
 }
 
 - (void)setupSubviews {
@@ -81,6 +85,7 @@
     //系统相册
     PHFetchResult<PHAssetCollection *> *smartAlbums = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum subtype:PHAssetCollectionSubtypeAlbumRegular options:nil];
     for (PHAssetCollection *collection in smartAlbums) {
+        //单个相册目录
         PHFetchResult *asset = [PHAsset fetchAssetsInAssetCollection:collection options:nil];
         if (asset.count == 0 || !asset) continue;
         NSMutableArray<PHAsset *> *assets = [NSMutableArray array];

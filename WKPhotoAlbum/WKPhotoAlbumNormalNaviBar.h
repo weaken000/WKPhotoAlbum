@@ -18,6 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
                     popAction:(nullable SEL)popAction
                    cancelAction:(nullable SEL)cancelAction;
 
+- (instancetype)initWithTarget:(id)target
+                     popAction:(nullable SEL)popAction
+               takePhotoAction:(nullable SEL)takePhotoAction
+                  cancelAction:(nullable SEL)cancelAction;
+
 @end
 
 NS_ASSUME_NONNULL_END

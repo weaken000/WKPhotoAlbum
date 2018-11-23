@@ -15,6 +15,10 @@
 }
 
 - (instancetype)initWithTarget:(id)target popAction:(SEL)popAction cancelAction:(SEL)cancelAction {
+    return [self initWithTarget:target popAction:popAction takePhotoAction:nil cancelAction:cancelAction];
+}
+
+- (instancetype)initWithTarget:(id)target popAction:(SEL)popAction takePhotoAction:(SEL)takePhotoAction cancelAction:(SEL)cancelAction {
     if (self == [super init]) {
         CGFloat statusH = [UIApplication sharedApplication].statusBarFrame.size.height;
         CGFloat width = [UIScreen mainScreen].bounds.size.width;
@@ -43,6 +47,15 @@
             [self addSubview:cancelButton];
         }
         
+        if (takePhotoAction) {
+            UIButton *takePhotoButton = [[UIButton alloc] init];
+            takePhotoButton.frame = CGRectMake(width - 64 - 44, statusH, 44, 44);
+            takePhotoButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+            [takePhotoButton setImage:[WKPhotoAlbumUtils imageName:@"wk_record_camera"] forState:UIControlStateNormal];
+            takePhotoButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10);
+            [takePhotoButton addTarget:target action:takePhotoAction forControlEvents:UIControlEventTouchUpInside];
+            [self addSubview:takePhotoButton];
+        }
         
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviTitleFont;
