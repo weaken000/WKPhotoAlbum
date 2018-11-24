@@ -11,39 +11,46 @@
 #import "WKPhotoAlbumConfig.h"
 #import "WKPhotoAlbumAuthorizationView.h"
 #import "WKPhotoAlbumUtils.h"
+#import "WKPhotoAlbumMediaPlayer.h"
 
 @interface WKPhotoAlbumCameraViewController ()<AVCaptureFileOutputRecordingDelegate>
 //相机输入
-@property (nonatomic, strong) AVCaptureDevice          *videoCaptureDevice;
-@property (nonatomic, strong) AVCaptureDeviceInput     *videoCaptureInput;
-@property (nonatomic, strong) AVCaptureMetadataOutput  *videoCaptureOutput;
+@property (nonatomic, strong) AVCaptureDevice            *videoCaptureDevice;
+@property (nonatomic, strong) AVCaptureDeviceInput       *videoCaptureInput;
+@property (nonatomic, strong) AVCaptureMetadataOutput    *videoCaptureOutput;
 //麦克风输入
-@property (nonatomic, strong) AVCaptureDevice          *audioCaptureDevice;
-@property (nonatomic, strong) AVCaptureDeviceInput     *audioCaptureInput;
-@property (nonatomic, strong) AVCaptureMetadataOutput  *audioCaptureOutput;
+@property (nonatomic, strong) AVCaptureDevice            *audioCaptureDevice;
+@property (nonatomic, strong) AVCaptureDeviceInput       *audioCaptureInput;
+@property (nonatomic, strong) AVCaptureMetadataOutput    *audioCaptureOutput;
 //拍摄照片输出
-@property (nonatomic, strong) AVCaptureStillImageOutput *imageOutPut;
+@property (nonatomic, strong) AVCaptureStillImageOutput  *imageOutPut;
 //录制视频输出
-@property (nonatomic, strong) AVCaptureMovieFileOutput  *movieOutPut;
+@property (nonatomic, strong) AVCaptureMovieFileOutput   *movieOutPut;
 
-@property (nonatomic, strong) AVCaptureSession *session;
+@property (nonatomic, strong) AVCaptureSession              *session;
 
-@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer    *previewLayer;
 
 @property (nonatomic, strong) WKPhotoAlbumAuthorizationView *authView;
+
+@property (nonatomic, strong) WKPhotoAlbumMediaPlayer       *player;
+
+@property (nonatomic, strong) UIImageView                   *preImageView;
 
 @end
 
 @implementation WKPhotoAlbumCameraViewController {
-    
+    //父视图
     UIView   *_videoPlayContanier;
-    UIView   *_actionViewContainer;
-    
+    UIView   *_bottomViewContainer;
+    UIView   *_naviViewContainer;
+    UIView   *_preViewContainer;
+    //导航按钮
     UIButton *_popButton;
     UIButton *_selectButton;
+    //底部动作按钮
     UIButton *_switchCameraButton;
     UIButton *_startCaptureButton;
-    
     UIView   *_modeSwitchContainer;
     UIButton *_imageModelButton;
     UIButton *_videoModeButton;
@@ -51,6 +58,7 @@
     
     NSURL   *_recordFilePath;
     BOOL     _isPhotoCapture;
+    BOOL     _isPreviewMode;
 }
 
 - (void)viewDidLoad {
@@ -62,46 +70,58 @@
 }
 
 - (void)setupNavi {
+    self.view.backgroundColor = [UIColor whiteColor];
+    
     _videoPlayContanier = [[UIView alloc] initWithFrame:self.view.bounds];
     [self.view addSubview:_videoPlayContanier];
     
     CGFloat y = [UIApplication sharedApplication].statusBarFrame.size.height;
+    _naviViewContainer = [[UIView alloc] initWithFrame:CGRectMake(0, y, [UIScreen mainScreen].bounds.size.width, 44.0)];
+    [self.view addSubview:_naviViewContainer];
+    
     _popButton = [[UIButton alloc] init];
-    _popButton.frame = CGRectMake(15, y, 44, 44);
+    _popButton.frame = CGRectMake(15, 0, 44, 44);
     _popButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
     _popButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10);
     [_popButton setImage:[WKPhotoAlbumUtils imageName:@"wk_record_pop"] forState:UIControlStateNormal];
     [_popButton addTarget:self action:@selector(click_popButton) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:_popButton];
+    [_popButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
+    _popButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
+    [_naviViewContainer addSubview:_popButton];
+    
+    _selectButton = [[UIButton alloc] init];
+    _selectButton.frame = CGRectMake(self.view.frame.size.width - 59, 0, 44, 44);
+    [_selectButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
+    [_selectButton setTitle:@"选择" forState:UIControlStateNormal];
+    _selectButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
+    [_selectButton addTarget:self action:@selector(click_selectButton) forControlEvents:UIControlEventTouchUpInside];
+    _selectButton.hidden = YES;
+    [_naviViewContainer addSubview:_selectButton];
 }
 
 - (void)setupCaptureView {
-    if (!_actionViewContainer) {
-        CGFloat y      = [UIApplication sharedApplication].statusBarFrame.size.height;
-        CGFloat width  = [UIScreen mainScreen].bounds.size.width;
-        CGFloat height = [UIScreen mainScreen].bounds.size.height;
+    if (!_bottomViewContainer) {
+        CGFloat y      = CGRectGetMaxY(_naviViewContainer.frame);
+        CGFloat width  = self.view.frame.size.width;
+        CGFloat height = self.view.frame.size.height - y;
         CGFloat bottom = 50;
         if (@available(iOS 11.0, *)) {
             bottom += self.view.safeAreaInsets.bottom;
         }
         
-        _actionViewContainer = [[UIView alloc] initWithFrame:self.view.bounds];
-        [self.view insertSubview:_actionViewContainer belowSubview:_popButton];
+        _preViewContainer = [[UIView alloc] initWithFrame:self.view.bounds];
+        [self.view insertSubview:_preViewContainer belowSubview:_naviViewContainer];
         
-        _selectButton = [[UIButton alloc] init];
-        _selectButton.frame = CGRectMake(width - 59, y, 44, 44);
-        [_selectButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
-        [_selectButton setTitle:@"完成" forState:UIControlStateNormal];
-        _selectButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
-        [_selectButton addTarget:self action:@selector(click_selectButton) forControlEvents:UIControlEventTouchUpInside];
-        [_actionViewContainer addSubview:_selectButton];
-        
+        _bottomViewContainer = [[UIView alloc] init];
+        _bottomViewContainer.frame = CGRectMake(0, y, width, height);
+        [self.view addSubview:_bottomViewContainer];
+
         _startCaptureButton = [[UIButton alloc] init];
         [_startCaptureButton setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
         [_startCaptureButton setTitle:@"开始" forState:UIControlStateNormal];
         [_startCaptureButton addTarget:self action:@selector(click_startButton) forControlEvents:UIControlEventTouchUpInside];
         _startCaptureButton.frame = CGRectMake((width - 60) * 0.5, height - bottom - 60, 60, 60);
-        [_actionViewContainer addSubview:_startCaptureButton];
+        [_bottomViewContainer addSubview:_startCaptureButton];
         
         _switchCameraButton = [[UIButton alloc] init];
         _switchCameraButton.frame = CGRectMake(CGRectGetMinX(_startCaptureButton.frame) - 84, CGRectGetMinY(_startCaptureButton.frame) + 8, 44, 44);
@@ -109,10 +129,10 @@
         [_switchCameraButton addTarget:self action:@selector(click_switchCamera) forControlEvents:UIControlEventTouchUpInside];
         _switchCameraButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         _switchCameraButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10);
-        [_actionViewContainer addSubview:_switchCameraButton];
+        [_bottomViewContainer addSubview:_switchCameraButton];
         
         _modeSwitchContainer = [[UIView alloc] init];
-        [_actionViewContainer addSubview:_modeSwitchContainer];
+        [_bottomViewContainer addSubview:_modeSwitchContainer];
         
         CGFloat modeW = 0;
         CGFloat modeX = 0;
@@ -157,6 +177,7 @@
             _transformX = modeW * 0.5 - _imageModelButton.frame.size.width * 0.5;
             _modeSwitchContainer.transform = CGAffineTransformMakeTranslation(_transformX, 0);
         }
+        
         [self modifyOutput];
     }
 }
@@ -168,7 +189,7 @@
             [weakSelf addCameraCapture];
         }
         if (micStatus == AVAuthorizationStatusAuthorized) {
-            [weakSelf modifyAudioCapture];
+            [weakSelf addAudioCapture];
         }
     }];
 }
@@ -197,50 +218,44 @@
     }
     [self.session commitConfiguration];
 }
-//修改音频输入，拍照时不需要音频输入
-- (void)modifyAudioCapture {
-    if (_isPhotoCapture) {
-        if (self.audioCaptureInput && [self.session.inputs containsObject:self.audioCaptureInput]) {
-            [self.session beginConfiguration];
-            [self.session removeInput:self.audioCaptureInput];
-            [self.session commitConfiguration];
+
+- (void)addAudioCapture {
+    if (!self.audioCaptureInput) {
+        [self.session beginConfiguration];
+        self.audioCaptureDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio].firstObject;
+        self.audioCaptureInput  = [[AVCaptureDeviceInput alloc] initWithDevice:self.audioCaptureDevice error:nil];
+        if ([self.session canAddInput:self.audioCaptureInput]) {
+            [self.session addInput:self.audioCaptureInput];
         }
-    } else {
-        if (!self.audioCaptureInput) {
-            self.audioCaptureDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio].firstObject;
-            self.audioCaptureInput  = [[AVCaptureDeviceInput alloc] initWithDevice:self.audioCaptureDevice error:nil];
-        }
-        if (![self.session.inputs containsObject:self.audioCaptureInput]) {
-            [self.session beginConfiguration];
-            if ([self.session canAddInput:self.audioCaptureInput]) {
-                [self.session addInput:self.audioCaptureInput];
-            }
-            [self.session commitConfiguration];
-        }
+        [self.session commitConfiguration];
     }
 }
 //切换输出源
 - (void)modifyOutput {
     if (_isPhotoCapture) {
-        [self.session beginConfiguration];
+        [self.session stopRunning];
         [self.session removeOutput:_movieOutPut];
         if ([self.session canAddOutput:self.imageOutPut]) {
             [self.session addOutput:self.imageOutPut];
         }
-        [self.session commitConfiguration];
+        [self.session startRunning];
     } else {
-        [self.session beginConfiguration];
+        [self.session stopRunning];
         [self.session removeOutput:_imageOutPut];
         if ([self.session canAddOutput:self.movieOutPut]) {
             [self.session addOutput:self.movieOutPut];
         }
-        [self.session commitConfiguration];
+        [self.session startRunning];
     }
 }
 
 #pragma mark - action
 - (void)click_popButton {
-    [self.navigationController popViewControllerAnimated:YES];
+    if (!_isPreviewMode) {
+        [self.navigationController popViewControllerAnimated:YES];
+    } else {
+        [self backToSession];
+    }
 }
 - (void)click_startButton {
     if (_isPhotoCapture) {
@@ -250,17 +265,14 @@
             if (imageDataSampleBuffer == nil || error) return;
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
             UIImage *image = [UIImage imageWithData:imageData];
-            if ([self.delegate respondsToSelector:@selector(captureView:didCreateResult:)]) {
-                [self.delegate captureView:self didCreateResult:image];
-            }
-            [self click_popButton];
+            [self intoPreviewWithResult:image];
         }];
     } else {
         if (self.movieOutPut.isRecording) {
             [self.movieOutPut stopRecording];
             [_startCaptureButton setTitle:@"开始" forState:UIControlStateNormal];
         } else {
-            NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.photoAlbum.wk"];
+            NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"wk_photoAlbum_record.mov"];
             _recordFilePath = [NSURL fileURLWithPath:path];
             if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
                 [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
@@ -286,7 +298,16 @@
     [self.session commitConfiguration];
 }
 - (void)click_selectButton {
-    
+    id result;
+    if (_isPhotoCapture) {
+        result = _preImageView.image;
+    } else {
+        result = _recordFilePath;
+    }
+    if ([self.delegate respondsToSelector:@selector(captureView:didCreateResult:)]) {
+        [self.delegate captureView:self didCreateResult:result];
+    }
+    [self.navigationController popViewControllerAnimated:YES];
 }
 - (void)click_switchModelButton:(UIButton *)sender {
     if (_transformX == 0) return;
@@ -302,10 +323,9 @@
         [sender setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     } completion:^(BOOL finished) {
         _isPhotoCapture = !_isPhotoCapture;
-        [self modifyAudioCapture];
+        [self addAudioCapture];
         [self modifyOutput];
     }];
-    
 }
 
 #pragma mark - AVCaptureFileOutputRecordingDelegate
@@ -314,10 +334,7 @@
 }
 - (void)captureOutput:(AVCaptureFileOutput *)output didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray<AVCaptureConnection *> *)connections error:(nullable NSError *)error {
     if (!error) {
-        if ([self.delegate respondsToSelector:@selector(captureView:didCreateResult:)]) {
-            [self.delegate captureView:self didCreateResult:outputFileURL];
-        }
-        [self click_popButton];
+        [self intoPreviewWithResult:outputFileURL];
     }
 }
 
@@ -331,6 +348,38 @@
     }
     return nil;
 }
+- (void)intoPreviewWithResult:(id)result {
+    [self.session stopRunning];
+    _videoPlayContanier.hidden  = YES;
+    _bottomViewContainer.hidden = YES;
+    _preViewContainer.hidden    = NO;
+    _selectButton.hidden        = NO;
+    [_popButton setTitle:@"取消" forState:UIControlStateNormal];
+    [_popButton setImage:nil forState:UIControlStateNormal];
+    if ([result isKindOfClass:[NSURL class]]) {
+        [self.player playInContainer:_preViewContainer withPlayerItem:[AVPlayerItem playerItemWithURL:result]];
+        _player.hidden = NO;
+        _preImageView.hidden = YES;
+    } else {
+        self.preImageView.image = result;
+        self.preImageView.hidden = NO;
+        _player.hidden = YES;
+    }
+    _isPreviewMode = YES;
+}
+
+- (void)backToSession {
+    [self.session startRunning];
+    _videoPlayContanier.hidden  = NO;
+    _bottomViewContainer.hidden = NO;
+    _preViewContainer.hidden    = YES;
+    _selectButton.hidden        = YES;
+    [_player stop];
+    _preImageView.image = nil;
+    [_popButton setTitle:nil forState:UIControlStateNormal];
+    [_popButton setImage:[WKPhotoAlbumUtils imageName:@"wk_record_pop"] forState:UIControlStateNormal];
+    _isPreviewMode = NO;
+}
 
 #pragma mark - lazy load
 - (WKPhotoAlbumAuthorizationView *)authView {
@@ -343,7 +392,7 @@
                 [weakSelf addCameraCapture];
             }
             if (micStatus == AVAuthorizationStatusAuthorized) {
-                [weakSelf modifyAudioCapture];
+                [weakSelf addAudioCapture];
             }
         };
     }
@@ -362,6 +411,25 @@
         _imageOutPut = [[AVCaptureStillImageOutput alloc] init];
     }
     return _imageOutPut;
+}
+
+- (WKPhotoAlbumMediaPlayer *)player {
+    if (!_player) {
+        _player = [[WKPhotoAlbumMediaPlayer alloc] init];
+    }
+    return _player;
+}
+
+- (UIImageView *)preImageView {
+    if (!_preImageView) {
+        _preImageView = [[UIImageView alloc] initWithFrame:self.view.bounds];
+        [_preViewContainer addSubview:_preImageView];
+    }
+    return _preImageView;
+}
+
+- (void)dealloc {
+    NSLog(@"%@--dealloc", [self class]);
 }
 
 @end

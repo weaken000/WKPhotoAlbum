@@ -60,8 +60,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSIndexPath *)addSelectWithIndex:(NSInteger)index;
 
 - (void)cancelSelectIndex:(NSInteger)index;
-//往当前相册中添加图片
-- (void)addPhotoIntoCollection:(UIImage *)image completed:(void (^)(BOOL success, NSString *errorMsg))completed;
+//往当前相册中添加图片、视频
+- (void)addPhotoIntoCollection:(id)result completed:(void (^)(BOOL success, NSString * _Nullable errorMsg))completed;
 
 - (void)updateCacheForCollectionView:(UICollectionView *)collectionView withOffset:(CGPoint)offset;
 

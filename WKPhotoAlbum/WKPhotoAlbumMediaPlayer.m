@@ -20,6 +20,9 @@
     [container addSubview:self];
     
     AVPlayerItem *item = [[AVPlayerItem alloc] initWithAsset:playerItem.asset];
+    if (item.error) {
+        NSLog(@"%@", item.error);
+    }
     _player = [AVPlayer playerWithPlayerItem:item];
     if (!_playerLayer) {
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];

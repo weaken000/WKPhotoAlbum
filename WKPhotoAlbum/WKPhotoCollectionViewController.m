@@ -332,15 +332,10 @@ WKPhotoAlbumCameraViewControllerDelegate
     return YES;
 }
 
-#pragma mark - UIImagePickerControllerDelegate
-- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-    [picker dismissViewControllerAnimated:YES completion:nil];
-}
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info {
-    [picker dismissViewControllerAnimated:YES completion:nil];
-    UIImage *image = info[UIImagePickerControllerOriginalImage];
+#pragma mark - WKPhotoAlbumCameraViewControllerDelegate
+- (void)captureView:(WKPhotoAlbumCameraViewController *)captureView didCreateResult:(id)result {
     __weak typeof(self) weakSelf = self;
-    [self.manager addPhotoIntoCollection:image completed:^(BOOL success, NSString * _Nonnull errorMsg) {
+    [self.manager addPhotoIntoCollection:result completed:^(BOOL success, NSString * _Nonnull errorMsg) {
         if (success) {
             [weakSelf.collectionView reloadData];
         }
