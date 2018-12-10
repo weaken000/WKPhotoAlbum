@@ -161,6 +161,9 @@
         CGFloat w = scale * image.size.width;
         CGFloat h = scale * image.size.height;
         _imageView.frame = CGRectMake((self.frame.size.width - w) / 2.0, (self.frame.size.height - h) / 2.0, w, h);
+        _videoContentView.frame = _imageView.bounds;
+        CGFloat controlW = 75;
+        _videoStartBtn.frame = CGRectMake((self.bounds.size.width - controlW) / 2.0, (self.bounds.size.height - controlW) / 2.0, controlW, controlW);
     }
     _imageView.image = image;
 }
