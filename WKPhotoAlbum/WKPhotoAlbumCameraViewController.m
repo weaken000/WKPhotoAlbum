@@ -13,7 +13,141 @@
 #import "WKPhotoAlbumUtils.h"
 #import "WKPhotoAlbumMediaPlayer.h"
 
-@interface WKPhotoAlbumCameraViewController ()<AVCaptureFileOutputRecordingDelegate>
+@protocol WKPhotoCameraStartButtonDelegate <NSObject>
+
+- (void)startButtonDidTapped;
+
+- (void)startButtonDidPressStart:(BOOL)start;
+
+@end
+
+@interface WKPhotoCameraStartButton: UIView
+
+@property (nonatomic, weak) id<WKPhotoCameraStartButtonDelegate> delegate;
+
+@property (nonatomic, assign) BOOL isCapturePhoto;
+
+@property (nonatomic, assign) CGFloat progress;
+
+- (void)endRecord;
+
+@end
+
+@implementation WKPhotoCameraStartButton {
+    UIVisualEffectView *_bgEffectView;
+    UIView             *_circleView;
+    CAShapeLayer       *_progressLayer;
+    
+    UITapGestureRecognizer *_tapper;
+    UILongPressGestureRecognizer *_longPresser;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    if (self == [super initWithFrame:frame]) {
+        [self setupSubviews];
+    }
+    return self;
+}
+
+- (void)setupSubviews {
+    
+    self.layer.cornerRadius = self.bounds.size.width * 0.5;
+    self.layer.masksToBounds = YES;
+    
+    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+    _bgEffectView = [[UIVisualEffectView alloc] initWithEffect:effect];
+    _bgEffectView.frame = self.bounds;
+    [self addSubview:_bgEffectView];
+    
+    _circleView = [[UIView alloc] init];
+    _circleView.backgroundColor = [UIColor whiteColor];
+    _circleView.frame = CGRectMake(0, 0, 55, 55);
+    _circleView.layer.cornerRadius = 27.5;
+    _circleView.center = CGPointMake(self.bounds.size.width * 0.5, self.bounds.size.height * 0.5);
+    [self addSubview:_circleView];
+    
+    _tapper = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(circleViewTapped)];
+    _tapper.numberOfTapsRequired = 1;
+    _tapper.numberOfTouchesRequired = 1;
+    [_circleView addGestureRecognizer:_tapper];
+    
+    _longPresser = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(circleViewLongPressed:)];
+    _longPresser.minimumPressDuration = 0.3;
+    [_circleView addGestureRecognizer:_longPresser];
+}
+
+- (void)startProgressLayer {
+    CGFloat lineWidth = 3.0;
+    CGRect pathRect = CGRectMake(0, 0, self.bounds.size.width - lineWidth, self.bounds.size.height - lineWidth);
+    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:pathRect cornerRadius:self.frame.size.width * 0.5];
+    
+    _progressLayer = [[CAShapeLayer alloc] init];
+    _progressLayer.bounds = CGRectMake(0, 0, self.bounds.size.width - lineWidth, self.bounds.size.width - lineWidth);
+    _progressLayer.position = CGPointMake(self.bounds.size.width * 0.5, self.bounds.size.height * 0.5);
+    _progressLayer.strokeColor = [WKPhotoAlbumConfig sharedConfig].selectColor.CGColor;
+    _progressLayer.fillColor = [UIColor clearColor].CGColor;
+    _progressLayer.lineWidth = lineWidth;
+    _progressLayer.lineCap = kCALineCapRound;
+    _progressLayer.path = path.CGPath;
+    _progressLayer.strokeEnd = 0.0;
+    [self.layer addSublayer:_progressLayer];
+}
+
+- (void)setIsCapturePhoto:(BOOL)isCapturePhoto {
+    _isCapturePhoto = isCapturePhoto;
+    if (isCapturePhoto) {
+        _tapper.enabled = YES;
+        _longPresser.enabled = NO;
+    } else {
+        _tapper.enabled = NO;
+        _longPresser.enabled = YES;
+    }
+}
+
+- (void)setProgress:(CGFloat)progress {
+    if (!_isCapturePhoto) {
+        _progressLayer.strokeEnd = progress;
+    }
+}
+
+- (void)endRecord {
+    [_progressLayer removeFromSuperlayer];
+    [UIView animateWithDuration:0.5 animations:^{
+        self.transform = CGAffineTransformIdentity;
+        _circleView.transform = CGAffineTransformIdentity;
+    } completion:^(BOOL finished) {}];
+}
+
+#pragma mark - Action
+- (void)circleViewTapped {
+    if ([self.delegate respondsToSelector:@selector(startButtonDidTapped)]) {
+        [self.delegate startButtonDidTapped];
+    }
+}
+
+- (void)circleViewLongPressed:(UILongPressGestureRecognizer *)longPresser {
+    if ([self.delegate respondsToSelector:@selector(startButtonDidPressStart:)]) {
+        BOOL start = longPresser.state == UIGestureRecognizerStateBegan;
+        if (start) {
+            [UIView animateWithDuration:0.5 animations:^{
+                self.transform = CGAffineTransformMakeScale(1.5, 1.5);
+                _circleView.transform = CGAffineTransformMakeScale(0.6, 0.6);
+            } completion:^(BOOL finished) {
+                [self startProgressLayer];
+                [self.delegate startButtonDidPressStart:YES];
+            }];
+            return;
+        }
+        BOOL end = longPresser.state == UIGestureRecognizerStateEnded;
+        if (end) {
+            [self.delegate startButtonDidPressStart:NO];
+        }
+    }
+}
+
+@end
+
+@interface WKPhotoAlbumCameraViewController ()<AVCaptureFileOutputRecordingDelegate, WKPhotoCameraStartButtonDelegate>
 //相机输入
 @property (nonatomic, strong) AVCaptureDevice            *videoCaptureDevice;
 @property (nonatomic, strong) AVCaptureDeviceInput       *videoCaptureInput;
@@ -49,8 +183,8 @@
     UIButton *_popButton;
     UIButton *_selectButton;
     //底部动作按钮
+    WKPhotoCameraStartButton *_startCaptureButton;
     UIButton *_switchCameraButton;
-    UIButton *_startCaptureButton;
     UIView   *_modeSwitchContainer;
     UIButton *_imageModelButton;
     UIButton *_videoModeButton;
@@ -59,6 +193,7 @@
     NSURL   *_recordFilePath;
     BOOL     _isPhotoCapture;
     BOOL     _isPreviewMode;
+    NSTimer *_recordTimer;
 }
 
 - (void)viewDidLoad {
@@ -116,15 +251,12 @@
         _bottomViewContainer.frame = CGRectMake(0, y, width, height);
         [self.view addSubview:_bottomViewContainer];
 
-        _startCaptureButton = [[UIButton alloc] init];
-        [_startCaptureButton setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
-        [_startCaptureButton setTitle:@"开始" forState:UIControlStateNormal];
-        [_startCaptureButton addTarget:self action:@selector(click_startButton) forControlEvents:UIControlEventTouchUpInside];
-        _startCaptureButton.frame = CGRectMake((width - 60) * 0.5, height - bottom - 60, 60, 60);
+        _startCaptureButton = [[WKPhotoCameraStartButton alloc] initWithFrame:CGRectMake((width - 80) * 0.5, height - bottom - 80, 80, 80)];
+        _startCaptureButton.delegate = self;
         [_bottomViewContainer addSubview:_startCaptureButton];
         
         _switchCameraButton = [[UIButton alloc] init];
-        _switchCameraButton.frame = CGRectMake(CGRectGetMinX(_startCaptureButton.frame) - 84, CGRectGetMinY(_startCaptureButton.frame) + 8, 44, 44);
+        _switchCameraButton.frame = CGRectMake(CGRectGetMinX(_startCaptureButton.frame) - 84, CGRectGetMidY(_startCaptureButton.frame) - 22, 44, 44);
         [_switchCameraButton setImage:[WKPhotoAlbumUtils imageName:@"wk_record_switch"] forState:UIControlStateNormal];
         [_switchCameraButton addTarget:self action:@selector(click_switchCamera) forControlEvents:UIControlEventTouchUpInside];
         _switchCameraButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -142,7 +274,7 @@
             [_imageModelButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             [_imageModelButton setTitle:@"照片拍摄" forState:UIControlStateNormal];
             _imageModelButton.titleLabel.font = [UIFont systemFontOfSize:14.0];
-            [_imageModelButton addTarget:self action:@selector(click_switchModelButton:) forControlEvents:UIControlEventTouchUpInside];
+            [_imageModelButton addTarget:self action:@selector(click_switchModeButton:) forControlEvents:UIControlEventTouchUpInside];
             _imageModelButton.frame = CGRectMake((width - 60) * 0.5, height - bottom - 60, 60, 60);
             [_modeSwitchContainer addSubview:_imageModelButton];
             [_imageModelButton sizeToFit];
@@ -156,7 +288,7 @@
         if ([WKPhotoAlbumConfig sharedConfig].allowTakeVideo) {
             _videoModeButton = [[UIButton alloc] init];
             [_videoModeButton setTitle:@"录制视频" forState:UIControlStateNormal];
-            [_videoModeButton addTarget:self action:@selector(click_switchModelButton:) forControlEvents:UIControlEventTouchUpInside];
+            [_videoModeButton addTarget:self action:@selector(click_switchModeButton:) forControlEvents:UIControlEventTouchUpInside];
             _videoModeButton.titleLabel.font = [UIFont systemFontOfSize:14.0];
             _videoModeButton.frame = CGRectMake((width - 60) * 0.5, height - bottom - 60, 60, 60);
             [_modeSwitchContainer addSubview:_videoModeButton];
@@ -220,7 +352,7 @@
 }
 
 - (void)addAudioCapture {
-    if (!self.audioCaptureInput) {
+    if (!self.audioCaptureInput && !_isPhotoCapture && self.authView.micStatus == AVAuthorizationStatusAuthorized) {
         [self.session beginConfiguration];
         self.audioCaptureDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio].firstObject;
         self.audioCaptureInput  = [[AVCaptureDeviceInput alloc] initWithDevice:self.audioCaptureDevice error:nil];
@@ -247,6 +379,7 @@
         }
         [self.session startRunning];
     }
+    _startCaptureButton.isCapturePhoto = _isPhotoCapture;
 }
 
 #pragma mark - action
@@ -255,31 +388,6 @@
         [self.navigationController popViewControllerAnimated:YES];
     } else {
         [self backToSession];
-    }
-}
-- (void)click_startButton {
-    if (_isPhotoCapture) {
-        AVCaptureConnection * videoConnection = [self.imageOutPut connectionWithMediaType:AVMediaTypeVideo];
-        if (videoConnection ==  nil) return;
-        [self.imageOutPut captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
-            if (imageDataSampleBuffer == nil || error) return;
-            NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
-            UIImage *image = [UIImage imageWithData:imageData];
-            [self intoPreviewWithResult:image];
-        }];
-    } else {
-        if (self.movieOutPut.isRecording) {
-            [self.movieOutPut stopRecording];
-            [_startCaptureButton setTitle:@"开始" forState:UIControlStateNormal];
-        } else {
-            NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"wk_photoAlbum_record.mov"];
-            _recordFilePath = [NSURL fileURLWithPath:path];
-            if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
-                [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
-            }
-            [self.movieOutPut startRecordingToOutputFileURL:_recordFilePath recordingDelegate:self];
-            [_startCaptureButton setTitle:@"停止" forState:UIControlStateNormal];
-        }
     }
 }
 - (void)click_switchCamera {
@@ -309,9 +417,12 @@
     }
     [self.navigationController popViewControllerAnimated:YES];
 }
-- (void)click_switchModelButton:(UIButton *)sender {
+- (void)click_switchModeButton:(UIButton *)sender {
     if (_transformX == 0) return;
     if ((_isPhotoCapture && sender == _imageModelButton) || (!_isPhotoCapture && sender == _videoModeButton)) return;
+    _isPhotoCapture = !_isPhotoCapture;
+    [self addAudioCapture];
+    [self modifyOutput];
     [UIView animateWithDuration:0.6 animations:^{
         if (sender == _imageModelButton) {
             _modeSwitchContainer.transform = CGAffineTransformMakeTranslation(_transformX, 0);
@@ -321,20 +432,62 @@
             [_imageModelButton setTitleColor:[UIColor colorWithWhite:0.5 alpha:0.6] forState:UIControlStateNormal];
         }
         [sender setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    } completion:^(BOOL finished) {
-        _isPhotoCapture = !_isPhotoCapture;
-        [self addAudioCapture];
-        [self modifyOutput];
     }];
+}
+
+#pragma mark - WKPhotoCameraStartButtonDelegate
+- (void)startButtonDidPressStart:(BOOL)start {
+    if (!_isPhotoCapture) {
+        if (!start) {
+            [self.movieOutPut stopRecording];
+        } else {
+            NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"wk_photoAlbum_record.mov"];
+            _recordFilePath = [NSURL fileURLWithPath:path];
+            if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+                [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+            }
+            [self.movieOutPut startRecordingToOutputFileURL:_recordFilePath recordingDelegate:self];
+            _modeSwitchContainer.hidden = YES;
+            _switchCameraButton.hidden = YES;
+        }
+    }
+}
+- (void)startButtonDidTapped {
+    if (_isPhotoCapture) {
+        AVCaptureConnection * videoConnection = [self.imageOutPut connectionWithMediaType:AVMediaTypeVideo];
+        if (videoConnection ==  nil) return;
+        [self.imageOutPut captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
+            if (imageDataSampleBuffer == nil || error) return;
+            NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
+            UIImage *image = [UIImage imageWithData:imageData];
+            [self intoPreviewWithResult:image];
+        }];
+    }
+}
+
+- (void)recordTimePaste {
+    CGFloat progress = CMTimeGetSeconds(self.movieOutPut.recordedDuration) / [WKPhotoAlbumConfig sharedConfig].videoMaxRecordTime;
+    _startCaptureButton.progress = MIN(1.0, progress);
+    if (progress >= 1.0) {
+        [_recordTimer invalidate];
+        _recordTimer = nil;
+        [self.movieOutPut stopRecording];
+    }
 }
 
 #pragma mark - AVCaptureFileOutputRecordingDelegate
 - (void)captureOutput:(AVCaptureFileOutput *)output didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray<AVCaptureConnection *> *)connections {
-    
+    _recordTimer = [NSTimer timerWithTimeInterval:0.1 target:self selector:@selector(recordTimePaste) userInfo:nil repeats:YES];
+    [[NSRunLoop currentRunLoop] addTimer:_recordTimer forMode:NSRunLoopCommonModes];
 }
 - (void)captureOutput:(AVCaptureFileOutput *)output didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray<AVCaptureConnection *> *)connections error:(nullable NSError *)error {
     if (!error) {
+        [_recordTimer invalidate];
+        _recordTimer = nil;
         [self intoPreviewWithResult:outputFileURL];
+        [_startCaptureButton endRecord];
+        _modeSwitchContainer.hidden = NO;
+        _switchCameraButton.hidden = NO;
     }
 }
 
@@ -426,10 +579,6 @@
         [_preViewContainer addSubview:_preImageView];
     }
     return _preImageView;
-}
-
-- (void)dealloc {
-    NSLog(@"%@--dealloc", [self class]);
 }
 
 @end

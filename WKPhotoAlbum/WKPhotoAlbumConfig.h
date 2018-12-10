@@ -62,6 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL allowTakePicture;
 //default is YES
 @property (nonatomic, assign) BOOL allowTakeVideo;
+//default is 20s
+@property (nonatomic, assign) NSTimeInterval videoMaxRecordTime;
 
 @property (nonatomic, copy  , nullable) void (^ selectBlock)(NSArray *result);
 

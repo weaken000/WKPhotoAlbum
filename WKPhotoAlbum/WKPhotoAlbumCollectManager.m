@@ -107,56 +107,94 @@
 }
 
 - (void)addPhotoIntoCollection:(id)result completed:(void (^)(BOOL, NSString * _Nullable))completed {
-    if ([result isKindOfClass:[UIImage class]]) {
-        __block NSString *assetId = nil;
-        [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+    BOOL isAddImage = [result isKindOfClass:[UIImage class]];
+    __block NSString *assetId = nil;
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        if (isAddImage) {
             assetId = [PHAssetCreationRequest creationRequestForAssetFromImage:result].placeholderForCreatedAsset.localIdentifier;
-        } completionHandler:^(BOOL success, NSError * _Nullable error) {
-            if (success) {
+        } else {
+            assetId = [PHAssetCreationRequest creationRequestForAssetFromVideoAtFileURL:result].placeholderForCreatedAsset.localIdentifier;
+        }
+    } completionHandler:^(BOOL success, NSError * _Nullable error) {
+        if (success) {
+            PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+            //当前已经处于系统相册
+            if (_assetCollection.assetCollectionType == PHAssetCollectionTypeSmartAlbum) {
                 PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
-                //当前已经处于相机胶卷相册，不需要再次添加
-                if (_assetCollection.assetCollectionType == PHAssetCollectionTypeSmartAlbum && _assetCollection.assetCollectionSubtype == PHAssetCollectionSubtypeSmartAlbumUserLibrary) {
-                    PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
-                    WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
-                    model.collectIndex = _allPhotoArray.count;
-                    model.asset = asset;
-                    [_allPhotoArray addObject:model];
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        [self addSelectWithIndex:model.collectIndex];
-                        completed(YES, nil);
-                    });
-                } else {
-                    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
-                        PHAssetCollectionChangeRequest *request = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:_assetCollection];
-                        [request addAssets:@[asset]];
-                    } completionHandler:^(BOOL success, NSError * _Nullable error) {
-                        if (success) {
-                            PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
-                            WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
-                            model.collectIndex = _allPhotoArray.count;
-                            model.asset = asset;
+                WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
+                model.collectIndex = _allPhotoArray.count;
+                model.asset = asset;
+                if (!isAddImage) {//视频类型，获取截图和播放资源
+                    [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                        model.videoCaptureImage = result;
+                        PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+                        options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
+                        [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
+                            if ([_allPhotoArray containsObject:model]) return;
+                            
+                            model.playItem = playerItem;
                             [_allPhotoArray addObject:model];
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [self addSelectWithIndex:model.collectIndex];
                                 completed(YES, nil);
                             });
-                        } else {
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                completed(NO, @"添加到相册失败，请重新添加");
-                            });
-                        }
+                        }];
                     }];
+                } else {
+                    [_allPhotoArray addObject:model];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self addSelectWithIndex:model.collectIndex];
+                        completed(YES, nil);
+                    });
                 }
             } else {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    completed(NO, @"添加到相册失败，请重新添加");
-                });
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    PHAssetCollectionChangeRequest *request = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:_assetCollection];
+                    [request addAssets:@[asset]];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    if (success) {
+                        PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+                        WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
+                        model.collectIndex = _allPhotoArray.count;
+                        model.asset = asset;
+                        if (!isAddImage) {//视频类型，获取截图和播放资源
+                            [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                                model.videoCaptureImage = result;
+                                PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+                                options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
+                                [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
+                                    if ([_allPhotoArray containsObject:model]) return;
+
+                                    model.playItem = playerItem;
+                                    [_allPhotoArray addObject:model];
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                        [self addSelectWithIndex:model.collectIndex];
+                                        completed(YES, nil);
+                                    });
+                                }];
+                            }];
+                        } else {
+                            [_allPhotoArray addObject:model];
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self addSelectWithIndex:model.collectIndex];
+                                completed(YES, nil);
+                            });
+                        }
+                    } else {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            completed(NO, @"添加到相册失败，请重新添加");
+                        });
+                    }
+                }];
             }
-        }];
-    } else {
-        
-    }
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completed(NO, @"添加到相册失败，请重新添加");
+            });
+        }
+    }];
     
+
 }
 
 - (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {

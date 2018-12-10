@@ -338,6 +338,8 @@ WKPhotoAlbumCameraViewControllerDelegate
     [self.manager addPhotoIntoCollection:result completed:^(BOOL success, NSString * _Nonnull errorMsg) {
         if (success) {
             [weakSelf.collectionView reloadData];
+            [weakSelf.view layoutIfNeeded];
+            [weakSelf.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.manager.allPhotoArray.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
         }
     }];
 }

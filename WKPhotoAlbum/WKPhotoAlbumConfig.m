@@ -32,6 +32,7 @@
         config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
         config.unSelectColor = [UIColor colorWithRed:27 / 255.0 green:81 / 255.0 blue:28 / 255.0 alpha:1.0];
         config.unEnableTitleColor = [UIColor colorWithWhite:0.7 alpha:0.7];
+        config.videoMaxRecordTime = 20;
     });
     return config;
 }
@@ -55,6 +56,7 @@
     config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
     config.unSelectColor = [UIColor colorWithRed:27 / 255.0 green:81 / 255.0 blue:28 / 255.0 alpha:1.0];
     config.unEnableTitleColor = [UIColor colorWithWhite:0.7 alpha:0.7];
+    config.videoMaxRecordTime = 20;
 }
 
 + (void)clearReback {
