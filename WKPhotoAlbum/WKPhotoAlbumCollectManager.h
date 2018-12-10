@@ -65,8 +65,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)updateCacheForCollectionView:(UICollectionView *)collectionView withOffset:(CGPoint)offset;
 
-- (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath
-                   resultHandler:(void (^)(UIImage * __nullable result, NSDictionary * __nullable info))resultHandler;
+- (PHImageRequestID)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath
+                                         resultHandler:(void (^)(UIImage * __nullable result, NSDictionary * __nullable info))resultHandler;
 
 - (void)addChangedListener:(id<WKPhotoAlbumCollectManagerChanged>)listener;
 
@@ -77,6 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)requestSelectImage:(void (^)(NSArray * __nullable images))selectImages;
 
 - (void)triggerSelectArrayWhileClipImage;
+
 @end
 
 NS_ASSUME_NONNULL_END

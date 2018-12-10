@@ -193,19 +193,17 @@
             });
         }
     }];
-    
-
 }
 
-- (void)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
+- (PHImageRequestID)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
-    
-  if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
+
+    if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
         if (model.playItem && model.videoCaptureImage) {
             resultHandler(model.videoCaptureImage, nil);
-            return;
+            return -1;
         }
-        [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             model.videoCaptureImage = result;
             PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
             options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
@@ -219,15 +217,16 @@
     } else if (model.asset.mediaType == PHAssetMediaTypeImage) {//图片
         if (model.clipImage) {
             resultHandler(model.clipImage, nil);
-            return;
+            return -1;
         }
-        [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 resultHandler(result, info);
             });
         }];
     } else {
         resultHandler(nil, nil);
+        return -1;
     }
 }
 

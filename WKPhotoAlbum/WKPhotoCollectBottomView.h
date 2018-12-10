@@ -35,6 +35,8 @@ UIKIT_EXTERN CGFloat const kActionViewActionHeight;
 
 - (instancetype)initWithFrame:(CGRect)frame useForCollectVC:(BOOL)useForCollectVC;
 
+- (void)hiddenClipButtonAfterClip;
+
 @end
 
 NS_ASSUME_NONNULL_END

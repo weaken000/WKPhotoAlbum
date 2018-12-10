@@ -126,6 +126,7 @@ WKPhotoAlbumPreviewCellDelegate
 - (void)click_naviRight:(UIButton *)sender {
     if (self.navigationView.isInEditMode) {
         [self clipImage];
+        [self.actionView hiddenClipButtonAfterClip];
     } else {
         WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
         if (model.selectIndex > 0) {
@@ -191,23 +192,12 @@ WKPhotoAlbumPreviewCellDelegate
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     cell.cellType = WKPhotoAlbumCellTypePreview;
     cell.delegate = self;
-    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
-    cell.albumInfo = model;
-    if (model.clipImage) {
-        cell.image = model.clipImage;
-    } else {
-        [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-            if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
-                cell.image = result;
-            } else {
-                cell.image = nil;
-            }
-        }];
-    }
+    cell.albumInfo = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
     return cell;
 }
 - (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath {
-    [self clearPlayerForIndexPath:indexPath previewCell:(WKPhotoAlbumPreviewCell *)cell];
+    WKPhotoAlbumPreviewCell *preViewCell = (WKPhotoAlbumPreviewCell *)cell;
+    [self clearPlayerForIndexPath:indexPath previewCell:preViewCell];
 }
 
 #pragma mark - UIScrollViewDelegate
@@ -223,9 +213,28 @@ WKPhotoAlbumPreviewCellDelegate
 }
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
+    [self updateCellData];
 }
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
+    [self updateCellData];
+}
+
+- (void)updateCellData {
+    NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.bounds.size.width;
+    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
+    WKPhotoAlbumPreviewCell *preViewCell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:indexPath];
+    if (model.clipImage) {
+        preViewCell.image = model.clipImage;
+        preViewCell.requestID = -1;
+    } else {
+        preViewCell.requestID = [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            if ([preViewCell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
+                preViewCell.image = result;
+            }
+        }];
+    }
 }
 
 #pragma mark - Config
@@ -466,7 +475,7 @@ WKPhotoAlbumPreviewCellDelegate
         return nil;
     }
     return [WKPhotoPreviewTransition animationWithAnimationControllerForOperation:operation completed:^{
-
+        [self updateCellData];
     }];
 }
 

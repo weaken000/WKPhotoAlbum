@@ -143,6 +143,12 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     [_manager addChangedListener:self];
 }
 
+- (void)hiddenClipButtonAfterClip {
+    WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
+    BOOL showEdit = (model.asset.mediaType == PHAssetMediaTypeImage && !model.clipImage);
+    _preOrEditButton.hidden = !showEdit;
+}
+
 #pragma mark - WKPhotoAlbumCollectManagerChanged
 - (BOOL)inListening {
     return YES;
@@ -195,7 +201,8 @@ CGFloat const kActionViewLeftMargin     = 15.0;
             _previewAssetIndex = [value integerValue];
             [_selectPreCollectionView reloadData];
             WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
-            _preOrEditButton.hidden = (model.asset.mediaType != PHAssetMediaTypeImage);
+            BOOL showEdit = (model.asset.mediaType == PHAssetMediaTypeImage && !model.clipImage);
+            _preOrEditButton.hidden = !showEdit;
         }
     }
 }

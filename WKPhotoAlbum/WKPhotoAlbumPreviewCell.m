@@ -100,25 +100,6 @@
         [self setupSubviews];
     }
 }
-- (void)setImage:(UIImage *)image {
-    _image = image;
-    if (_cellType == WKPhotoAlbumCellTypePreview) {
-        [self aspectFitImageViewForImage:image];
-    } else {
-        _imageView.image = image;
-        if (_cellType == WKPhotoAlbumCellTypeCollect && _albumInfo.playItem) {
-            _videoLengthLabel.text = _albumInfo.assetDuration;
-            [_videoLengthLabel sizeToFit];
-            _videoLengthLabel.frame = CGRectMake(CGRectGetMaxX(_videoTypeImageView.frame) + 10,
-                                                 self.bounds.size.height - 25 + (20 - _videoLengthLabel.frame.size.height) * 0.5,
-                                                 _videoLengthLabel.frame.size.width,
-                                                 _videoLengthLabel.frame.size.height);
-        }
-    }
-}
-- (void)setSelectIndex:(NSInteger)selectIndex {
-    self.selectButton.selectIndex = selectIndex;
-}
 - (void)setAlbumInfo:(WKPhotoAlbumModel *)albumInfo {
     _albumInfo = albumInfo;
     //展示播放按钮
@@ -139,6 +120,7 @@
         } else {
             self.videoLengthLabel.hidden = NO;
             self.videoTypeImageView.hidden = NO;
+            _videoTypeImageView.frame = CGRectMake(5, self.bounds.size.height - 25, 20, 20);
         }
         return;
     }
@@ -147,9 +129,29 @@
             _videoTypeImageView.hidden = YES;
         } else {
             self.videoTypeImageView.hidden = NO;
+            _videoTypeImageView.frame = CGRectMake(5, self.bounds.size.height - 25, 20, 20);
         }
         return;
     }
+}
+- (void)setImage:(UIImage *)image {
+    _image = image;
+    if (_cellType == WKPhotoAlbumCellTypePreview) {
+        [self aspectFitImageViewForImage:image];
+    } else {
+        _imageView.image = image;
+        if (_cellType == WKPhotoAlbumCellTypeCollect && _albumInfo.playItem) {
+            _videoLengthLabel.text = _albumInfo.assetDuration;
+            [_videoLengthLabel sizeToFit];
+            _videoLengthLabel.frame = CGRectMake(CGRectGetMaxX(_videoTypeImageView.frame) + 10,
+                                                self.bounds.size.height - 25 + (20 - _videoLengthLabel.frame.size.height) * 0.5,
+                                                _videoLengthLabel.frame.size.width,
+                                                _videoLengthLabel.frame.size.height);
+        }
+    }
+}
+- (void)setSelectIndex:(NSInteger)selectIndex {
+    self.selectButton.selectIndex = selectIndex;
 }
 
 #pragma mark - Config
