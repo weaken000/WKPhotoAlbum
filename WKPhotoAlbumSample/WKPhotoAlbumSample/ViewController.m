@@ -32,17 +32,21 @@
     [WKPhotoAlbumConfig sharedConfig].isIncludeVideo = YES;
     [WKPhotoAlbumConfig sharedConfig].canClip = YES;
     [WKPhotoAlbum setPhotoAlbumDelegate:self];
-    UIViewController *next = [WKPhotoAlbum presentAlbumVC];
+    UIViewController *next = [WKPhotoAlbum presentAlbumVCWithSelectBlock:^(NSArray * _Nonnull result) {
+        NSLog(@"blockSelect--%@", result);
+    } cancelBlock:^{
+        NSLog(@"blockCancel");
+    }];
     [self presentViewController:next animated:YES completion:nil];
 }
 
 
 #pragma mark - WKPhotoAlbumDelegate
 - (void)photoAlbumDidSelectResult:(NSArray *)result {
-    NSLog(@"select-%@", result);
+    NSLog(@"delegateSelect-%@", result);
 }
 - (void)photoAlbumCancelSelect {
-    NSLog(@"cancel");
+    NSLog(@"delegateCancel");
 }
 
 @end
