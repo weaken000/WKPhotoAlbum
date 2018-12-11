@@ -47,8 +47,8 @@ UIViewController *next = [WKPhotoAlbum presentAlbumVC];
 ...
 ```
 ## 3. Screen Shot
-![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/ScreenShot1.png)
-![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/ScreenShot2.png)
+![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/WKPhotoAlbumSample/ScreenShot1.png)
+![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/WKPhotoAlbumSample/ScreenShot2.png)
 
  ## 4. 集成方式
  
