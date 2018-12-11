@@ -20,13 +20,13 @@
         config.naviBgColor = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
         config.naviTitleColor = [UIColor whiteColor];
         config.isIncludeImage = YES;
-        config.isIncludeVideo = YES;
+        config.isIncludeVideo = NO;
         config.maxSelectCount = 1;
         config.canClip = NO;
         config.numberOfLine = 4;
         config.lineSpace = 5;
         config.allowTakePicture = YES;
-        config.allowTakeVideo = YES;
+        config.allowTakeVideo = NO;
         config.selectColor = [UIColor colorWithRed:39 / 255.0 green:170 / 255.0 blue:45 / 255.0 alpha:1.0];
         config.bottomBarColorWhileCollect = [UIColor colorWithRed:42 / 255.0 green:47 / 255.0 blue:55 / 255.0 alpha:1.0];
         config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
@@ -44,13 +44,13 @@
     config.naviBgColor = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
     config.naviTitleColor = [UIColor whiteColor];
     config.isIncludeImage = YES;
-    config.isIncludeVideo = YES;
+    config.isIncludeVideo = NO;
     config.maxSelectCount = 1;
     config.canClip = NO;
     config.numberOfLine = 4;
     config.lineSpace = 5;
     config.allowTakePicture = YES;
-    config.allowTakeVideo = YES;
+    config.allowTakeVideo = NO;
     config.selectColor = [UIColor colorWithRed:39 / 255.0 green:170 / 255.0 blue:45 / 255.0 alpha:1.0];
     config.bottomBarColorWhileCollect = [UIColor colorWithRed:42 / 255.0 green:47 / 255.0 blue:55 / 255.0 alpha:1.0];
     config.bottomBarColorWhilePreview = [UIColor colorWithRed:42 / 255.0 green:42 / 255.0 blue:42 / 255.0 alpha:0.8];
@@ -64,6 +64,23 @@
     config.selectBlock = nil;
     config.cancelBlock = nil;
     config.delegate = nil;
+}
+
+- (void)setMaxSelectCount:(NSUInteger)maxSelectCount {
+    _maxSelectCount = MIN(maxSelectCount, 6);
+}
+- (void)setIsIncludeVideo:(BOOL)isIncludeVideo {
+    _isIncludeVideo = isIncludeVideo;
+    if (!isIncludeVideo) {
+        self.allowTakeVideo = NO;
+    }
+}
+- (void)setAllowTakeVideo:(BOOL)allowTakeVideo {
+    if (!self.isIncludeVideo) {
+        _allowTakeVideo = NO;
+    } else {
+        _allowTakeVideo = allowTakeVideo;
+    }
 }
 
 @end

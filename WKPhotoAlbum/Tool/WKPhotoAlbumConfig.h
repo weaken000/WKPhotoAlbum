@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL isIncludeVideo;
 //default is YES
 @property (nonatomic, assign) BOOL isIncludeImage;
-//default is 1
+//default is 1, max is 6
 @property (nonatomic, assign) NSUInteger maxSelectCount;
 //default is NO
 @property (nonatomic, assign) BOOL canClip;
@@ -60,7 +60,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) CGFloat lineSpace;
 //default is YES
 @property (nonatomic, assign) BOOL allowTakePicture;
-//default is YES
+//default is NO, it works while isIncludeVideo is yes
 @property (nonatomic, assign) BOOL allowTakeVideo;
 //default is 20s
 @property (nonatomic, assign) NSTimeInterval videoMaxRecordTime;
