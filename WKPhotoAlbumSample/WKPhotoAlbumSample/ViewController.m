@@ -7,9 +7,9 @@
 //
 
 #import "ViewController.h"
-//#import "WKPhotoAlbum.h"
+#import "WKPhotoAlbum.h"
 
-@interface ViewController ()
+@interface ViewController ()<WKPhotoAlbumDelegate>
 
 @end
 
@@ -28,16 +28,16 @@
 }
 
 - (void)click_modalBtn {
-//    [WKPhotoAlbumConfig sharedConfig].maxSelectCount = 3;
-//    [WKPhotoAlbumConfig sharedConfig].allowTakeVideo = NO;
-//    [WKPhotoAlbumConfig sharedConfig].canClip = NO;
-//    [WKPhotoAlbum setPhotoAlbumDelegate:self];
-//    UIViewController *next = [WKPhotoAlbum presentAlbumVCWithSelectBlock:^(NSArray * _Nonnull result) {
-//        NSLog(@"blockSelect--%@", result);
-//    } cancelBlock:^{
-//        NSLog(@"blockCancel");
-//    }];
-//    [self presentViewController:next animated:YES completion:nil];
+    [WKPhotoAlbumConfig sharedConfig].maxSelectCount = 3;
+    [WKPhotoAlbumConfig sharedConfig].allowTakeVideo = NO;
+    [WKPhotoAlbumConfig sharedConfig].canClip = NO;
+    [WKPhotoAlbum setPhotoAlbumDelegate:self];
+    UIViewController *next = [WKPhotoAlbum presentAlbumVCWithSelectBlock:^(NSArray * _Nonnull result) {
+        NSLog(@"blockSelect--%@", result);
+    } cancelBlock:^{
+        NSLog(@"blockCancel");
+    }];
+    [self presentViewController:next animated:YES completion:nil];
 }
 
 

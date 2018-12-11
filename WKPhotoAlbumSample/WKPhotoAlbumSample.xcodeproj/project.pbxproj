@@ -17,7 +17,23 @@
 		04B9B18E2177069F002D2581 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B18D2177069F002D2581 /* main.m */; };
 		04B9B1982177069F002D2581 /* WKPhotoAlbumSampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B1972177069F002D2581 /* WKPhotoAlbumSampleTests.m */; };
 		04B9B1A32177069F002D2581 /* WKPhotoAlbumSampleUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B1A22177069F002D2581 /* WKPhotoAlbumSampleUITests.m */; };
-		04F96F6721BFBF330067C350 /* WKEmpty.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F6621BFBF330067C350 /* WKEmpty.m */; };
+		04F96F7821BFC0DD0067C350 /* WKPhotoAlbum.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7521BFC0DD0067C350 /* WKPhotoAlbum.m */; };
+		04F96F8B21BFC0F70067C350 /* WKPhotoPreviewNavigationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7921BFC0F50067C350 /* WKPhotoPreviewNavigationView.m */; };
+		04F96F8C21BFC0F70067C350 /* WKPhotoAlbumNormalNaviBar.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7A21BFC0F50067C350 /* WKPhotoAlbumNormalNaviBar.m */; };
+		04F96F8D21BFC0F70067C350 /* WKPhotoAlbumAuthorizationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7B21BFC0F50067C350 /* WKPhotoAlbumAuthorizationView.m */; };
+		04F96F8E21BFC0F70067C350 /* WKPhotoAlbumMediaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7C21BFC0F60067C350 /* WKPhotoAlbumMediaPlayer.m */; };
+		04F96F8F21BFC0F70067C350 /* WKPhotoAlbumCollectManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7D21BFC0F60067C350 /* WKPhotoAlbumCollectManager.m */; };
+		04F96F9021BFC0F70067C350 /* WKPhotoAlbumViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F7E21BFC0F60067C350 /* WKPhotoAlbumViewController.m */; };
+		04F96F9121BFC0F70067C350 /* WKPhotoCollectBottomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8021BFC0F60067C350 /* WKPhotoCollectBottomView.m */; };
+		04F96F9221BFC0F70067C350 /* WKPhotoAlbumConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8121BFC0F60067C350 /* WKPhotoAlbumConfig.m */; };
+		04F96F9321BFC0F70067C350 /* WKPhotoAlbumCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8221BFC0F60067C350 /* WKPhotoAlbumCell.m */; };
+		04F96F9421BFC0F70067C350 /* WKPhotoAlbumCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8421BFC0F60067C350 /* WKPhotoAlbumCameraViewController.m */; };
+		04F96F9521BFC0F70067C350 /* WKPhotoAlbumUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8521BFC0F60067C350 /* WKPhotoAlbumUtils.m */; };
+		04F96F9621BFC0F70067C350 /* WKPhotoPreviewTransition.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8621BFC0F60067C350 /* WKPhotoPreviewTransition.m */; };
+		04F96F9721BFC0F70067C350 /* WKPhotoPreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8721BFC0F60067C350 /* WKPhotoPreviewViewController.m */; };
+		04F96F9821BFC0F70067C350 /* WKPhotoCollectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8821BFC0F70067C350 /* WKPhotoCollectionViewController.m */; };
+		04F96F9921BFC0F70067C350 /* WKPhotoAlbumSelectButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8921BFC0F70067C350 /* WKPhotoAlbumSelectButton.m */; };
+		04F96F9A21BFC0F70067C350 /* WKPhotoAlbumPreviewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 04F96F8A21BFC0F70067C350 /* WKPhotoAlbumPreviewCell.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,8 +72,40 @@
 		04B9B19E2177069F002D2581 /* WKPhotoAlbumSampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WKPhotoAlbumSampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04B9B1A22177069F002D2581 /* WKPhotoAlbumSampleUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumSampleUITests.m; sourceTree = "<group>"; };
 		04B9B1A42177069F002D2581 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		04F96F6521BFBF330067C350 /* WKEmpty.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WKEmpty.h; sourceTree = "<group>"; };
-		04F96F6621BFBF330067C350 /* WKEmpty.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKEmpty.m; sourceTree = "<group>"; };
+		04F96F6821BFC0DC0067C350 /* WKPhotoAlbumCameraViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumCameraViewController.h; sourceTree = "<group>"; };
+		04F96F6921BFC0DC0067C350 /* WKPhotoAlbumViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumViewController.h; sourceTree = "<group>"; };
+		04F96F6A21BFC0DC0067C350 /* WKPhotoAlbumUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumUtils.h; sourceTree = "<group>"; };
+		04F96F6B21BFC0DC0067C350 /* WKPhotoAlbum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbum.h; sourceTree = "<group>"; };
+		04F96F6C21BFC0DC0067C350 /* WKPhotoAlbumPreviewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumPreviewCell.h; sourceTree = "<group>"; };
+		04F96F6D21BFC0DC0067C350 /* WKPhotoAlbumSelectButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumSelectButton.h; sourceTree = "<group>"; };
+		04F96F6E21BFC0DD0067C350 /* WKPhotoPreviewNavigationView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoPreviewNavigationView.h; sourceTree = "<group>"; };
+		04F96F6F21BFC0DD0067C350 /* WKPhotoCollectionViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoCollectionViewController.h; sourceTree = "<group>"; };
+		04F96F7021BFC0DD0067C350 /* WKPhotoAlbumMediaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumMediaPlayer.h; sourceTree = "<group>"; };
+		04F96F7121BFC0DD0067C350 /* WKPhotoPreviewTransition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoPreviewTransition.h; sourceTree = "<group>"; };
+		04F96F7221BFC0DD0067C350 /* WKPhotoPreviewViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoPreviewViewController.h; sourceTree = "<group>"; };
+		04F96F7321BFC0DD0067C350 /* WKPhotoCollectBottomView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoCollectBottomView.h; sourceTree = "<group>"; };
+		04F96F7421BFC0DD0067C350 /* WKPhotoAlbumNormalNaviBar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumNormalNaviBar.h; sourceTree = "<group>"; };
+		04F96F7521BFC0DD0067C350 /* WKPhotoAlbum.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbum.m; sourceTree = "<group>"; };
+		04F96F7621BFC0DD0067C350 /* WKPhotoAlbumAuthorizationView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumAuthorizationView.h; sourceTree = "<group>"; };
+		04F96F7721BFC0DD0067C350 /* WKPhotoAlbumCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumCell.h; sourceTree = "<group>"; };
+		04F96F7921BFC0F50067C350 /* WKPhotoPreviewNavigationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoPreviewNavigationView.m; sourceTree = "<group>"; };
+		04F96F7A21BFC0F50067C350 /* WKPhotoAlbumNormalNaviBar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumNormalNaviBar.m; sourceTree = "<group>"; };
+		04F96F7B21BFC0F50067C350 /* WKPhotoAlbumAuthorizationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumAuthorizationView.m; sourceTree = "<group>"; };
+		04F96F7C21BFC0F60067C350 /* WKPhotoAlbumMediaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumMediaPlayer.m; sourceTree = "<group>"; };
+		04F96F7D21BFC0F60067C350 /* WKPhotoAlbumCollectManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumCollectManager.m; sourceTree = "<group>"; };
+		04F96F7E21BFC0F60067C350 /* WKPhotoAlbumViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumViewController.m; sourceTree = "<group>"; };
+		04F96F7F21BFC0F60067C350 /* WKPhotoAlbumConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumConfig.h; sourceTree = "<group>"; };
+		04F96F8021BFC0F60067C350 /* WKPhotoCollectBottomView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoCollectBottomView.m; sourceTree = "<group>"; };
+		04F96F8121BFC0F60067C350 /* WKPhotoAlbumConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumConfig.m; sourceTree = "<group>"; };
+		04F96F8221BFC0F60067C350 /* WKPhotoAlbumCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumCell.m; sourceTree = "<group>"; };
+		04F96F8321BFC0F60067C350 /* WKPhotoAlbumCollectManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumCollectManager.h; sourceTree = "<group>"; };
+		04F96F8421BFC0F60067C350 /* WKPhotoAlbumCameraViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumCameraViewController.m; sourceTree = "<group>"; };
+		04F96F8521BFC0F60067C350 /* WKPhotoAlbumUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumUtils.m; sourceTree = "<group>"; };
+		04F96F8621BFC0F60067C350 /* WKPhotoPreviewTransition.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoPreviewTransition.m; sourceTree = "<group>"; };
+		04F96F8721BFC0F60067C350 /* WKPhotoPreviewViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoPreviewViewController.m; sourceTree = "<group>"; };
+		04F96F8821BFC0F70067C350 /* WKPhotoCollectionViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoCollectionViewController.m; sourceTree = "<group>"; };
+		04F96F8921BFC0F70067C350 /* WKPhotoAlbumSelectButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumSelectButton.m; sourceTree = "<group>"; };
+		04F96F8A21BFC0F70067C350 /* WKPhotoAlbumPreviewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumPreviewCell.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -153,8 +201,40 @@
 			isa = PBXGroup;
 			children = (
 				040C232B2188601100F04703 /* Resources */,
-				04F96F6521BFBF330067C350 /* WKEmpty.h */,
-				04F96F6621BFBF330067C350 /* WKEmpty.m */,
+				04F96F6B21BFC0DC0067C350 /* WKPhotoAlbum.h */,
+				04F96F7521BFC0DD0067C350 /* WKPhotoAlbum.m */,
+				04F96F7621BFC0DD0067C350 /* WKPhotoAlbumAuthorizationView.h */,
+				04F96F7B21BFC0F50067C350 /* WKPhotoAlbumAuthorizationView.m */,
+				04F96F6821BFC0DC0067C350 /* WKPhotoAlbumCameraViewController.h */,
+				04F96F8421BFC0F60067C350 /* WKPhotoAlbumCameraViewController.m */,
+				04F96F7721BFC0DD0067C350 /* WKPhotoAlbumCell.h */,
+				04F96F8221BFC0F60067C350 /* WKPhotoAlbumCell.m */,
+				04F96F8321BFC0F60067C350 /* WKPhotoAlbumCollectManager.h */,
+				04F96F7D21BFC0F60067C350 /* WKPhotoAlbumCollectManager.m */,
+				04F96F7F21BFC0F60067C350 /* WKPhotoAlbumConfig.h */,
+				04F96F8121BFC0F60067C350 /* WKPhotoAlbumConfig.m */,
+				04F96F7021BFC0DD0067C350 /* WKPhotoAlbumMediaPlayer.h */,
+				04F96F7C21BFC0F60067C350 /* WKPhotoAlbumMediaPlayer.m */,
+				04F96F7421BFC0DD0067C350 /* WKPhotoAlbumNormalNaviBar.h */,
+				04F96F7A21BFC0F50067C350 /* WKPhotoAlbumNormalNaviBar.m */,
+				04F96F6C21BFC0DC0067C350 /* WKPhotoAlbumPreviewCell.h */,
+				04F96F8A21BFC0F70067C350 /* WKPhotoAlbumPreviewCell.m */,
+				04F96F6D21BFC0DC0067C350 /* WKPhotoAlbumSelectButton.h */,
+				04F96F8921BFC0F70067C350 /* WKPhotoAlbumSelectButton.m */,
+				04F96F6A21BFC0DC0067C350 /* WKPhotoAlbumUtils.h */,
+				04F96F8521BFC0F60067C350 /* WKPhotoAlbumUtils.m */,
+				04F96F6921BFC0DC0067C350 /* WKPhotoAlbumViewController.h */,
+				04F96F7E21BFC0F60067C350 /* WKPhotoAlbumViewController.m */,
+				04F96F7321BFC0DD0067C350 /* WKPhotoCollectBottomView.h */,
+				04F96F8021BFC0F60067C350 /* WKPhotoCollectBottomView.m */,
+				04F96F6F21BFC0DD0067C350 /* WKPhotoCollectionViewController.h */,
+				04F96F8821BFC0F70067C350 /* WKPhotoCollectionViewController.m */,
+				04F96F6E21BFC0DD0067C350 /* WKPhotoPreviewNavigationView.h */,
+				04F96F7921BFC0F50067C350 /* WKPhotoPreviewNavigationView.m */,
+				04F96F7121BFC0DD0067C350 /* WKPhotoPreviewTransition.h */,
+				04F96F8621BFC0F60067C350 /* WKPhotoPreviewTransition.m */,
+				04F96F7221BFC0DD0067C350 /* WKPhotoPreviewViewController.h */,
+				04F96F8721BFC0F60067C350 /* WKPhotoPreviewViewController.m */,
 			);
 			name = WKPhotoAlbum;
 			path = ../WKPhotoAlbum;
@@ -292,10 +372,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04F96F9921BFC0F70067C350 /* WKPhotoAlbumSelectButton.m in Sources */,
+				04F96F9121BFC0F70067C350 /* WKPhotoCollectBottomView.m in Sources */,
+				04F96F8B21BFC0F70067C350 /* WKPhotoPreviewNavigationView.m in Sources */,
+				04F96F9021BFC0F70067C350 /* WKPhotoAlbumViewController.m in Sources */,
+				04F96F8D21BFC0F70067C350 /* WKPhotoAlbumAuthorizationView.m in Sources */,
 				04B9B1832177069C002D2581 /* ViewController.m in Sources */,
-				04F96F6721BFBF330067C350 /* WKEmpty.m in Sources */,
+				04F96F9821BFC0F70067C350 /* WKPhotoCollectionViewController.m in Sources */,
+				04F96F8F21BFC0F70067C350 /* WKPhotoAlbumCollectManager.m in Sources */,
+				04F96F9221BFC0F70067C350 /* WKPhotoAlbumConfig.m in Sources */,
 				04B9B18E2177069F002D2581 /* main.m in Sources */,
+				04F96F7821BFC0DD0067C350 /* WKPhotoAlbum.m in Sources */,
+				04F96F9A21BFC0F70067C350 /* WKPhotoAlbumPreviewCell.m in Sources */,
 				04B9B1802177069C002D2581 /* AppDelegate.m in Sources */,
+				04F96F9321BFC0F70067C350 /* WKPhotoAlbumCell.m in Sources */,
+				04F96F9721BFC0F70067C350 /* WKPhotoPreviewViewController.m in Sources */,
+				04F96F8E21BFC0F70067C350 /* WKPhotoAlbumMediaPlayer.m in Sources */,
+				04F96F9521BFC0F70067C350 /* WKPhotoAlbumUtils.m in Sources */,
+				04F96F9421BFC0F70067C350 /* WKPhotoAlbumCameraViewController.m in Sources */,
+				04F96F9621BFC0F70067C350 /* WKPhotoPreviewTransition.m in Sources */,
+				04F96F8C21BFC0F70067C350 /* WKPhotoAlbumNormalNaviBar.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
