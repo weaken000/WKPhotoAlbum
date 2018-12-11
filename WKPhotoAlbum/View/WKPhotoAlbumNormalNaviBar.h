@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
                takePhotoAction:(nullable SEL)takePhotoAction
                   cancelAction:(nullable SEL)cancelAction;
 
+- (void)hiddenCameraButton:(BOOL)hidden;
+
 @end
 
 NS_ASSUME_NONNULL_END

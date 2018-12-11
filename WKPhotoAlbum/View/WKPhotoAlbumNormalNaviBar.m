@@ -33,6 +33,7 @@
             backButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
             backButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
             [backButton addTarget:target action:popAction forControlEvents:UIControlEventTouchUpInside];
+            backButton.tag = 101;
             [self addSubview:backButton];
         }
         
@@ -44,6 +45,7 @@
             [cancelButton setTitleColor:[WKPhotoAlbumConfig sharedConfig].naviTitleColor forState:UIControlStateNormal];
             cancelButton.titleLabel.font = [WKPhotoAlbumConfig sharedConfig].naviItemFont;
             [cancelButton addTarget:target action:cancelAction forControlEvents:UIControlEventTouchUpInside];
+            cancelButton.tag = 102;
             [self addSubview:cancelButton];
         }
         
@@ -54,6 +56,7 @@
             [takePhotoButton setImage:[WKPhotoAlbumUtils imageName:@"wk_record_camera"] forState:UIControlStateNormal];
             takePhotoButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10);
             [takePhotoButton addTarget:target action:takePhotoAction forControlEvents:UIControlEventTouchUpInside];
+            takePhotoButton.tag = 103;
             [self addSubview:takePhotoButton];
         }
         
@@ -76,6 +79,13 @@
     _title = title;
     _titleLabel.text = title;
     [_titleLabel sizeToFit];
+}
+
+- (void)hiddenCameraButton:(BOOL)hidden {
+    UIButton *btn = [self viewWithTag:103];
+    if (btn) {
+        btn.hidden = hidden;
+    }
 }
 
 @end

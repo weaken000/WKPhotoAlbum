@@ -63,6 +63,9 @@ WKPhotoAlbumPreviewCellDelegate
     [super viewDidDisappear:animated];
     [_player cancelPlay];
 }
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+}
 
 - (void)setupSubviews {
     

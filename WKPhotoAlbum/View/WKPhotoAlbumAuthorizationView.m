@@ -41,6 +41,7 @@
     self.albumStatus = authStatus;
     if (authStatus == PHAuthorizationStatusAuthorized) {
         self.hidden = YES;
+        [self removeFromSuperview];
     } else if (authStatus == PHAuthorizationStatusDenied || authStatus == PHAuthorizationStatusRestricted) {
         _requestAlbumBtn.hidden = YES;
         if (!_jumpToSettingBtn) {
@@ -97,6 +98,7 @@
     _micStatus    = micStatus;
     if (cameraStatus == AVAuthorizationStatusAuthorized && micStatus == AVAuthorizationStatusAuthorized) {
         self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     
@@ -119,8 +121,11 @@
         _reqeustCameraBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame));
         return;
     }
-    _reqeustCameraBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame) - 20);
-
+    NSInteger showCount = 0;
+    if (!_reqeustCameraBtn.isHidden) {
+        showCount += 1;
+    }
+    
     if (!_reqeustMicBtn) {
         _reqeustMicBtn = [UIButton buttonWithType:UIButtonTypeSystem];
         _reqeustMicBtn.titleLabel.font = [UIFont systemFontOfSize:16.0];
@@ -129,14 +134,26 @@
     if (micStatus == AVAuthorizationStatusNotDetermined) {//未请求
         [_reqeustMicBtn setTitle:@"获取麦克风权限" forState:UIControlStateNormal];
         [_reqeustMicBtn addTarget:self action:@selector(click_requestMicBtn) forControlEvents:UIControlEventTouchUpInside];
+        showCount += 1;
     } else if (micStatus == AVAuthorizationStatusAuthorized) {
         _reqeustMicBtn.hidden = YES;
     }  else {//拒绝
         [_reqeustMicBtn setTitle:@"前往设置，开启麦克风权限" forState:UIControlStateNormal];
         [_reqeustMicBtn addTarget:self action:@selector(click_jumpToSetting) forControlEvents:UIControlEventTouchUpInside];
+        showCount += 1;
     }
     [_reqeustMicBtn sizeToFit];
-    _reqeustMicBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame) + 20);
+    
+    if (showCount == 2) {
+        _reqeustCameraBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame) - 20);
+        _reqeustMicBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame) + 20);
+    } else {
+        if (!_reqeustCameraBtn.isHidden) {
+            _reqeustCameraBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame));
+        } else {
+            _reqeustMicBtn.center = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame));
+        }
+    }
 }
 
 - (void)click_requestAlbumBtn {

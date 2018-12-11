@@ -204,8 +204,11 @@
     [self requestAuthorization];
 }
 
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+}
+
 - (void)setupNavi {
-    self.view.backgroundColor = [UIColor whiteColor];
     
     _videoPlayContanier = [[UIView alloc] initWithFrame:self.view.bounds];
     [self.view addSubview:_videoPlayContanier];
@@ -232,10 +235,16 @@
     [_selectButton addTarget:self action:@selector(click_selectButton) forControlEvents:UIControlEventTouchUpInside];
     _selectButton.hidden = YES;
     [_naviViewContainer addSubview:_selectButton];
+    
+    CGFloat width  = self.view.frame.size.width;
+    CGFloat height = self.view.frame.size.height - y;
+    _bottomViewContainer = [[UIView alloc] init];
+    _bottomViewContainer.frame = CGRectMake(0, CGRectGetMaxY(_naviViewContainer.frame), width, height);
+    [self.view addSubview:_bottomViewContainer];
 }
 
 - (void)setupCaptureView {
-    if (!_bottomViewContainer) {
+    if (!_preViewContainer) {
         CGFloat y      = CGRectGetMaxY(_naviViewContainer.frame);
         CGFloat width  = self.view.frame.size.width;
         CGFloat height = self.view.frame.size.height - y;
@@ -246,10 +255,6 @@
         
         _preViewContainer = [[UIView alloc] initWithFrame:self.view.bounds];
         [self.view insertSubview:_preViewContainer belowSubview:_naviViewContainer];
-        
-        _bottomViewContainer = [[UIView alloc] init];
-        _bottomViewContainer.frame = CGRectMake(0, y, width, height);
-        [self.view addSubview:_bottomViewContainer];
 
         _startCaptureButton = [[WKPhotoCameraStartButton alloc] initWithFrame:CGRectMake((width - 80) * 0.5, height - bottom - 80, 80, 80)];
         _startCaptureButton.delegate = self;
@@ -380,6 +385,7 @@
         [self.session startRunning];
     }
     _startCaptureButton.isCapturePhoto = _isPhotoCapture;
+    _authView.hidden = _isPhotoCapture;
 }
 
 #pragma mark - action
@@ -396,8 +402,14 @@
     [self.session removeInput:self.videoCaptureInput];
     if (position == AVCaptureDevicePositionBack) {
         self.videoCaptureDevice = [self getCameraDeviceWithPosition:AVCaptureDevicePositionFront];
+        if ([self.session canSetSessionPreset:AVCaptureSessionPreset1280x720]) {
+            [self.session setSessionPreset:AVCaptureSessionPreset1280x720];
+        }
     } else {
         self.videoCaptureDevice = [self getCameraDeviceWithPosition:AVCaptureDevicePositionBack];
+        if ([self.session canSetSessionPreset:AVCaptureSessionPreset1920x1080]) {
+            [self.session setSessionPreset:AVCaptureSessionPreset1920x1080];
+        }
     }
     self.videoCaptureInput = [[AVCaptureDeviceInput alloc] initWithDevice:self.videoCaptureDevice error:nil];
     if ([self.session canAddInput:self.videoCaptureInput]) {
@@ -446,6 +458,8 @@
             if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
                 [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
             }
+            _authView.hidden = YES;
+            [self fixVideoMirrored];
             [self.movieOutPut startRecordingToOutputFileURL:_recordFilePath recordingDelegate:self];
             _modeSwitchContainer.hidden = YES;
             _switchCameraButton.hidden = YES;
@@ -454,8 +468,9 @@
 }
 - (void)startButtonDidTapped {
     if (_isPhotoCapture) {
-        AVCaptureConnection * videoConnection = [self.imageOutPut connectionWithMediaType:AVMediaTypeVideo];
-        if (videoConnection ==  nil) return;
+        AVCaptureConnection *videoConnection = [self.imageOutPut connectionWithMediaType:AVMediaTypeVideo];
+        if (videoConnection == nil) return;
+        [self fixVideoMirrored];
         [self.imageOutPut captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
             if (imageDataSampleBuffer == nil || error) return;
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
@@ -474,6 +489,21 @@
         [self.movieOutPut stopRecording];
     }
 }
+//修复前置摄像头拍摄镜像
+- (void)fixVideoMirrored {
+    AVCaptureConnection *videoConnection;
+    if (_isPhotoCapture) {
+        videoConnection = [self.imageOutPut connectionWithMediaType:AVMediaTypeVideo];
+    } else {
+        videoConnection = [self.movieOutPut connectionWithMediaType:AVMediaTypeVideo];
+    }
+    
+    if (self.videoCaptureDevice.position == AVCaptureDevicePositionUnspecified || self.videoCaptureDevice.position == AVCaptureDevicePositionFront) {
+        videoConnection.videoMirrored = YES;
+    } else {
+        videoConnection.videoMirrored = NO;
+    }
+}
 
 #pragma mark - AVCaptureFileOutputRecordingDelegate
 - (void)captureOutput:(AVCaptureFileOutput *)output didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray<AVCaptureConnection *> *)connections {
@@ -482,6 +512,7 @@
 }
 - (void)captureOutput:(AVCaptureFileOutput *)output didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray<AVCaptureConnection *> *)connections error:(nullable NSError *)error {
     if (!error) {
+        _authView.hidden = NO;
         [_recordTimer invalidate];
         _recordTimer = nil;
         [self intoPreviewWithResult:outputFileURL];
@@ -537,8 +568,8 @@
 #pragma mark - lazy load
 - (WKPhotoAlbumAuthorizationView *)authView {
     if (!_authView) {
-        _authView = [[WKPhotoAlbumAuthorizationView alloc] initWithFrame:[UIScreen mainScreen].bounds];
-        [self.view addSubview:_authView];
+        _authView = [[WKPhotoAlbumAuthorizationView alloc] initWithFrame:_bottomViewContainer.bounds];
+        [_bottomViewContainer insertSubview:_authView atIndex:0];
         __weak typeof(self) weakSelf = self;
         _authView.authChanged = ^(PHAuthorizationStatus albumStatus, AVAuthorizationStatus cameraStatus, AVAuthorizationStatus micStatus) {
             if (cameraStatus == AVAuthorizationStatusAuthorized) {

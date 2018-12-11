@@ -265,5 +265,4 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     }
 }
 
-
 @end

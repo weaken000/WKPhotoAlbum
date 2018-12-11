@@ -61,6 +61,10 @@ WKPhotoAlbumCameraViewControllerDelegate
     [self requestAuthorization];
 }
 
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+}
+
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     [self layoutSubiews];
@@ -82,6 +86,9 @@ WKPhotoAlbumCameraViewControllerDelegate
         if (albumStatus == PHAuthorizationStatusAuthorized) {//已获得权限
             [weakSelf installManager];
             [weakSelf setupSubviews];
+        } else {
+            [weakSelf.navigationView hiddenCameraButton:YES];
+            [weakSelf.view insertSubview:weakSelf.authorizationView belowSubview:weakSelf.navigationView];
         }
     }];
 }
@@ -354,6 +361,7 @@ WKPhotoAlbumCameraViewControllerDelegate
             __strong typeof(weakSelf) strongSelf = weakSelf;
             [strongSelf installManager];
             [strongSelf setupSubviews];
+            [strongSelf.navigationView hiddenCameraButton:NO];
         };
     }
     return _authorizationView;

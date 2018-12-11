@@ -380,21 +380,24 @@
 
 - (void)requestSelectImage:(void (^)(NSArray * _Nullable))selectImages {
     NSMutableArray *resultArr = [NSMutableArray arrayWithCapacity:self.selectIndexArray.count];
+    __block NSInteger workCount = self.selectIndexArray.count;
     for (NSNumber *index in self.selectIndexArray) {
         WKPhotoAlbumModel *model = self.allPhotoArray[index.integerValue];
         if (model.asset.mediaType == PHAssetMediaTypeImage) {
             if (model.clipImage) {
                 [resultArr addObject:model.clipImage];
-                if (resultArr.count == self.selectIndexArray.count) {
+                workCount -= 1;
+                if (workCount == 0) {
                     selectImages(resultArr);
                 }
             } else {
                 CGFloat scale = [UIScreen mainScreen].scale;
                 CGSize targetSize = CGSizeMake([UIScreen mainScreen].bounds.size.width * scale, ([UIScreen mainScreen].bounds.size.height * scale));
                 PHImageRequestOptions *options;
-                if (self.isUseOrigin) {
+                if (self.isUseOrigin) {//获取原图，使用最大尺寸
                     options = [[PHImageRequestOptions alloc] init];
                     options.resizeMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+                    targetSize = PHImageManagerMaximumSize;
                 } else {
                     options = self.reqeustImageOptions;
                 }
@@ -402,9 +405,10 @@
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (result) {
                             [resultArr addObject:result];
-                            if (resultArr.count == self.selectIndexArray.count) {
-                                selectImages(resultArr);
-                            }
+                        }
+                        workCount -= 1;
+                        if (workCount == 0) {
+                            selectImages(resultArr);
                         }
                     });
                 }];
@@ -422,9 +426,10 @@
                         NSURL *url = [asset valueForKey:@"URL"];
                         if (url) {
                             [resultArr addObject:url];
-                            if (resultArr.count == self.selectIndexArray.count) {
-                                selectImages(resultArr);
-                            }
+                        }
+                        workCount -= 1;
+                        if (workCount == 0) {
+                            selectImages(resultArr);
                         }
                     }
                 });
