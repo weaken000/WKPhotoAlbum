@@ -2,9 +2,10 @@
 
 ## 0. 概述
  `WKPhotoAlbum`是一个用于`iOS`的自定义相册选择器，UI上模仿了微信的相册选择器。
- 
- ***Requirement*** iOS 9.0+
- 
+
+  ### `Requirement`
+  iOS 9.0+
+  
  ## 1. 实现功能
  * 系统的资源自定义集成
  * 图片与视频的选取
@@ -45,6 +46,10 @@ UIViewController *next = [WKPhotoAlbum presentAlbumVC];
 @property (nonatomic, assign) BOOL allowTakeVideo;
 ...
 ```
+## 3. Screen Shot
+![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/ScreenShot1.png)
+![image](https://github.com/weaken000/WKPhotoAlbum/blob/master/WKPhotoAlbumSample/ScreenShot2.png)
+
  ## 4. 集成方式
  
  ### `cocoapods`

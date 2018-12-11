@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		040C232D2188601100F04703 /* WKPhotoAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 040C232C2188601100F04703 /* WKPhotoAlbum.bundle */; };
 		0417A40A21BF8D60001F8396 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0417A40921BF8D60001F8396 /* Launch Screen.storyboard */; };
+		0417A40D21BFA134001F8396 /* ScreenShot1.png in Resources */ = {isa = PBXBuildFile; fileRef = 0417A40B21BFA133001F8396 /* ScreenShot1.png */; };
+		0417A40E21BFA134001F8396 /* ScreenShot2.png in Resources */ = {isa = PBXBuildFile; fileRef = 0417A40C21BFA134001F8396 /* ScreenShot2.png */; };
 		04B9863A21A79CE2009F8EB2 /* WKPhotoAlbumCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9863921A79CE2009F8EB2 /* WKPhotoAlbumCameraViewController.m */; };
 		04B9863D21A7A120009F8EB2 /* WKPhotoAlbumAuthorizationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9863C21A7A120009F8EB2 /* WKPhotoAlbumAuthorizationView.m */; };
 		04B9B1802177069C002D2581 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B9B17F2177069C002D2581 /* AppDelegate.m */; };
@@ -54,6 +56,8 @@
 /* Begin PBXFileReference section */
 		040C232C2188601100F04703 /* WKPhotoAlbum.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = WKPhotoAlbum.bundle; sourceTree = "<group>"; };
 		0417A40921BF8D60001F8396 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
+		0417A40B21BFA133001F8396 /* ScreenShot1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ScreenShot1.png; sourceTree = "<group>"; };
+		0417A40C21BFA134001F8396 /* ScreenShot2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ScreenShot2.png; sourceTree = "<group>"; };
 		04B9863821A79CE2009F8EB2 /* WKPhotoAlbumCameraViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumCameraViewController.h; sourceTree = "<group>"; };
 		04B9863921A79CE2009F8EB2 /* WKPhotoAlbumCameraViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKPhotoAlbumCameraViewController.m; sourceTree = "<group>"; };
 		04B9863B21A7A120009F8EB2 /* WKPhotoAlbumAuthorizationView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WKPhotoAlbumAuthorizationView.h; sourceTree = "<group>"; };
@@ -214,6 +218,8 @@
 		04B9B17D2177069C002D2581 /* WKPhotoAlbumSample */ = {
 			isa = PBXGroup;
 			children = (
+				0417A40B21BFA133001F8396 /* ScreenShot1.png */,
+				0417A40C21BFA134001F8396 /* ScreenShot2.png */,
 				04B9B17E2177069C002D2581 /* AppDelegate.h */,
 				04B9B17F2177069C002D2581 /* AppDelegate.m */,
 				04B9B1812177069C002D2581 /* ViewController.h */,
@@ -362,8 +368,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				0417A40A21BF8D60001F8396 /* Launch Screen.storyboard in Resources */,
+				0417A40E21BFA134001F8396 /* ScreenShot2.png in Resources */,
 				040C232D2188601100F04703 /* WKPhotoAlbum.bundle in Resources */,
 				04B9B1882177069F002D2581 /* Assets.xcassets in Resources */,
+				0417A40D21BFA134001F8396 /* ScreenShot1.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
