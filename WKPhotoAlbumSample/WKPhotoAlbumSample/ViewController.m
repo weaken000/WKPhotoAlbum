@@ -47,6 +47,7 @@
 }
 - (void)photoAlbumCancelSelect {
     NSLog(@"delegateCancel");
+    
 }
 
 @end
