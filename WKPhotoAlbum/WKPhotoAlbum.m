@@ -29,6 +29,7 @@
 
 + (void)setPhotoAlbumDelegate:(id<WKPhotoAlbumDelegate>)delegate {
     [WKPhotoAlbumConfig sharedConfig].delegate = delegate;
+    
 }
 
 @end
