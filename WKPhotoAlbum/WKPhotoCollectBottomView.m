@@ -199,10 +199,29 @@ CGFloat const kActionViewLeftMargin     = 15.0;
     } else if ([key isEqualToString:@"currentPreviewIndex"]) {//当前展示的图片索引变化
         if (_selectPreCollectionView) {
             _previewAssetIndex = [value integerValue];
-            [_selectPreCollectionView reloadData];
-            WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
-            BOOL showEdit = (model.asset.mediaType == PHAssetMediaTypeImage && !model.clipImage);
-            _preOrEditButton.hidden = !showEdit;
+            BOOL nowContaints = NO;
+            for (NSNumber *collectIndex in self.manager.selectIndexArray) {
+                if ([collectIndex integerValue] == _previewAssetIndex) {
+                    nowContaints = YES;
+                    break;
+                }
+            }
+            
+            BOOL preContaints = NO;
+            NSArray<WKPhotoAlbumPreviewCell *> *visiableCell = [_selectPreCollectionView visibleCells];
+            for (WKPhotoAlbumPreviewCell *cell in visiableCell) {
+                if (cell.imageView.layer.borderWidth > 1.0) {
+                    preContaints = YES;
+                    break;
+                }
+            }
+            
+            if ((preContaints != nowContaints) || (nowContaints && preContaints)) {
+                [_selectPreCollectionView reloadData];
+                WKPhotoAlbumModel *model = self.manager.allPhotoArray[self.manager.currentPreviewIndex];
+                BOOL showEdit = (model.asset.mediaType == PHAssetMediaTypeImage && !model.clipImage);
+                _preOrEditButton.hidden = !showEdit;
+            }
         }
     }
 }

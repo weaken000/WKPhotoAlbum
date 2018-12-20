@@ -184,7 +184,9 @@ WKPhotoAlbumPreviewCellDelegate
     self.manager.isUseOrigin = useOrigin;
 }
 - (void)actionView:(WKPhotoCollectBottomView *)actionView didSelectIndex:(NSInteger)index {
-    [self.previewCollectionView setContentOffset:CGPointMake(index * self.previewCollectionView.frame.size.width, 0) animated:YES];
+    [self.previewCollectionView setContentOffset:CGPointMake(index * self.previewCollectionView.frame.size.width, 0) animated:NO];
+    [self.view layoutIfNeeded];
+    [self setNavigationBarSelectIndex];
 }
 
 #pragma mark - UICollectionViewDataSource & UICollectionViewDelegate
@@ -193,9 +195,20 @@ WKPhotoAlbumPreviewCellDelegate
 }
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     WKPhotoAlbumPreviewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
+    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
     cell.cellType = WKPhotoAlbumCellTypePreview;
     cell.delegate = self;
-    cell.albumInfo = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
+    cell.albumInfo = model;
+    if (model.clipImage) {
+        cell.image = model.clipImage;
+        cell.requestID = -1;
+    } else {
+        cell.requestID = [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+            if ([cell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
+                cell.image = result;
+            }
+        }];
+    }
     return cell;
 }
 - (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -216,28 +229,9 @@ WKPhotoAlbumPreviewCellDelegate
 }
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
-    [self updateCellData];
 }
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [self setNavigationBarSelectIndex];
-    [self updateCellData];
-}
-
-- (void)updateCellData {
-    NSInteger index = self.previewCollectionView.contentOffset.x / self.previewCollectionView.bounds.size.width;
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:index inSection:0];
-    WKPhotoAlbumModel *model = [self.manager.allPhotoArray objectAtIndex:indexPath.row];
-    WKPhotoAlbumPreviewCell *preViewCell = (WKPhotoAlbumPreviewCell *)[self.previewCollectionView cellForItemAtIndexPath:indexPath];
-    if (model.clipImage) {
-        preViewCell.image = model.clipImage;
-        preViewCell.requestID = -1;
-    } else {
-        preViewCell.requestID = [self.manager reqeustCollectionImageForIndexPath:indexPath resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-            if ([preViewCell.albumInfo.asset.localIdentifier isEqualToString:model.asset.localIdentifier] && result) {
-                preViewCell.image = result;
-            }
-        }];
-    }
 }
 
 #pragma mark - Config
@@ -478,7 +472,7 @@ WKPhotoAlbumPreviewCellDelegate
         return nil;
     }
     return [WKPhotoPreviewTransition animationWithAnimationControllerForOperation:operation completed:^{
-        [self updateCellData];
+
     }];
 }
 

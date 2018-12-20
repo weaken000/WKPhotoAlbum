@@ -29,7 +29,8 @@
 
 - (void)click_modalBtn {
     [WKPhotoAlbumConfig sharedConfig].maxSelectCount = 3;
-    [WKPhotoAlbumConfig sharedConfig].allowTakeVideo = NO;
+    [WKPhotoAlbumConfig sharedConfig].isIncludeVideo = YES;
+    [WKPhotoAlbumConfig sharedConfig].allowTakeVideo = YES;
     [WKPhotoAlbumConfig sharedConfig].canClip = NO;
     [WKPhotoAlbum setPhotoAlbumDelegate:self];
     UIViewController *next = [WKPhotoAlbum presentAlbumVCWithSelectBlock:^(NSArray * _Nonnull result) {
