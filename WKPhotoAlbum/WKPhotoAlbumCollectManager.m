@@ -391,17 +391,11 @@
                     selectImages(resultArr);
                 }
             } else {
-                CGFloat scale = [UIScreen mainScreen].scale;
-                CGSize targetSize = CGSizeMake([UIScreen mainScreen].bounds.size.width * scale, ([UIScreen mainScreen].bounds.size.height * scale));
-                PHImageRequestOptions *options;
-                if (self.isUseOrigin) {//获取原图，使用最大尺寸
-                    options = [[PHImageRequestOptions alloc] init];
-                    options.resizeMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
-                    targetSize = PHImageManagerMaximumSize;
-                } else {
-                    options = self.reqeustImageOptions;
-                }
-                [self.cacheManager requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
+                options = [[PHImageRequestOptions alloc] init];
+                options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+                CGSize targetSize = PHImageManagerMaximumSize;
+                [[PHImageManager defaultManager] requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFill options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (result) {
                             [resultArr addObject:result];
@@ -420,7 +414,7 @@
             } else {
                 options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
             }
-            [self.cacheManager requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+            [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (asset) {
                         NSURL *url = [asset valueForKey:@"URL"];
