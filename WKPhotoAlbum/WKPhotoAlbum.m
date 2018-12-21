@@ -10,6 +10,32 @@
 #import "WKPhotoAlbumViewController.h"
 #import "WKPhotoCollectionViewController.h"
 
+@interface WKPhotoAlbumNavigationController: UINavigationController
+@end
+
+@implementation WKPhotoAlbumNavigationController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    SEL fd = NSSelectorFromString(@"fd_fullscreenPopGestureRecognizer");
+    if (fd && [self respondsToSelector:fd]) {
+        UIGestureRecognizer *gesture = [self valueForKey:@"fd_fullscreenPopGestureRecognizer"];
+        gesture.enabled = NO;
+    }
+    [self setNavigationBarHidden:YES];
+}
+
+- (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated {
+    SEL fd = NSSelectorFromString(@"fd_prefersNavigationBarHidden");
+    if (fd && [self respondsToSelector:fd]) {
+        [viewController setValue:@(YES) forKey:@"fd_prefersNavigationBarHidden"];
+    }
+    [super pushViewController:viewController animated:animated];
+}
+
+@end
+
+
 @implementation WKPhotoAlbum
 
 + (UIViewController *)presentAlbumVC {
@@ -20,10 +46,12 @@
     [WKPhotoAlbumConfig sharedConfig].cancelBlock = [cancelBlock copy];
 
     WKPhotoAlbumViewController *rootVC = [[WKPhotoAlbumViewController alloc] init];
-    UINavigationController *navitionController = [[UINavigationController alloc] initWithRootViewController:rootVC];
+    WKPhotoAlbumNavigationController *navitionController = [[WKPhotoAlbumNavigationController alloc] initWithRootViewController:rootVC];
+    navitionController.navigationBar.hidden = YES;
+    [navitionController setNavigationBarHidden:YES];
+    
     WKPhotoCollectionViewController *allPhotoVC = [[WKPhotoCollectionViewController alloc] init];
     [navitionController pushViewController:allPhotoVC animated:NO];
-    [navitionController setNavigationBarHidden:YES];
     return navitionController;
 }
 
