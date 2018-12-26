@@ -111,6 +111,7 @@ WKPhotoAlbumCameraViewControllerDelegate
     PHImageRequestOptions *reqeustOptions = [[PHImageRequestOptions alloc] init];
     reqeustOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
     reqeustOptions.synchronous = NO;
+    reqeustOptions.networkAccessAllowed = YES;
     _manager.reqeustImageOptions = reqeustOptions;
     [_manager.cacheManager stopCachingImagesForAllAssets];
     [_manager addChangedListener:self];
@@ -345,8 +346,7 @@ WKPhotoAlbumCameraViewControllerDelegate
     [self.manager addPhotoIntoCollection:result completed:^(BOOL success, NSString * _Nonnull errorMsg) {
         if (success) {
             [weakSelf.collectionView reloadData];
-            [weakSelf.view layoutIfNeeded];
-            [weakSelf.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.manager.allPhotoArray.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
+            [weakSelf.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
         }
     }];
 }

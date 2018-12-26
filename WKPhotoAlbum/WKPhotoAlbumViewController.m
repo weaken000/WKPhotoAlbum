@@ -102,7 +102,7 @@
             }
         }];
         if (!assets.count) continue;
-        [WKPhotoAlbumUtils readImageByAsset:assets.firstObject size:CGSizeMake(150, 150) deliveryMode:0 contentModel:PHImageContentModeAspectFit synchronous:YES complete:^(UIImage * _Nonnull image) {
+        [WKPhotoAlbumUtils readImageByAsset:assets.firstObject size:CGSizeMake(150, 150) deliveryMode:0 contentModel:PHImageContentModeAspectFill synchronous:YES complete:^(UIImage * _Nonnull image) {
             [self.assetCollection addObject:@{@"collection": collection,
                                               @"asset": assets,
                                               @"cover": image}];
@@ -125,7 +125,7 @@
             }
         }];
         if (!assets.count) continue;
-        [WKPhotoAlbumUtils readImageByAsset:assets.firstObject size:CGSizeMake(100, 100) deliveryMode:0 contentModel:PHImageContentModeAspectFit synchronous:YES complete:^(UIImage * _Nonnull image) {
+        [WKPhotoAlbumUtils readImageByAsset:assets.firstObject size:CGSizeMake(100, 100) deliveryMode:0 contentModel:PHImageContentModeAspectFill synchronous:YES complete:^(UIImage * _Nonnull image) {
             [self.assetCollection addObject:@{@"collection": collection,
                                               @"asset": assets,
                                               @"cover": image}];

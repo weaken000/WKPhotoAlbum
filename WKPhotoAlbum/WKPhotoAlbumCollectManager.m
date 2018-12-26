@@ -118,14 +118,27 @@
     } completionHandler:^(BOOL success, NSError * _Nullable error) {
         if (success) {
             PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
-            //当前已经处于系统相册
-            if (_assetCollection.assetCollectionType == PHAssetCollectionTypeSmartAlbum) {
-                PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
+            if (!asset) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completed(NO, @"添加到相册失败，请重新添加");
+                });
+            } else {
+                for (WKPhotoAlbumModel *model in self.allPhotoArray) {
+                    model.collectIndex += 1;
+                }
+                if (self.selectIndexArray.count > 0) {
+                    NSMutableArray *selectArr = [NSMutableArray array];
+                    for (NSNumber *selectNum in self.selectIndexArray) {
+                        [selectArr addObject:@([selectNum integerValue] + 1)];
+                    }
+                    _selectIndexArray = [selectArr mutableCopy];
+                }
+                
                 WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
-                model.collectIndex = _allPhotoArray.count;
+                model.collectIndex = 0;
                 model.asset = asset;
                 if (!isAddImage) {//视频类型，获取截图和播放资源
-                    [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                    [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFill options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
                         model.videoCaptureImage = result;
                         PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
                         options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
@@ -133,7 +146,7 @@
                             if ([_allPhotoArray containsObject:model]) return;
                             
                             model.playItem = playerItem;
-                            [_allPhotoArray addObject:model];
+                            [_allPhotoArray insertObject:model atIndex:0];
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [self addSelectWithIndex:model.collectIndex];
                                 completed(YES, nil);
@@ -141,51 +154,12 @@
                         }];
                     }];
                 } else {
-                    [_allPhotoArray addObject:model];
+                    [_allPhotoArray insertObject:model atIndex:0];
                     dispatch_async(dispatch_get_main_queue(), ^{
                         [self addSelectWithIndex:model.collectIndex];
                         completed(YES, nil);
                     });
                 }
-            } else {
-                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
-                    PHAssetCollectionChangeRequest *request = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:_assetCollection];
-                    [request addAssets:@[asset]];
-                } completionHandler:^(BOOL success, NSError * _Nullable error) {
-                    if (success) {
-                        PHAsset *asset = [PHAsset fetchAssetsWithLocalIdentifiers:@[assetId] options:nil].firstObject;
-                        WKPhotoAlbumModel *model = [[WKPhotoAlbumModel alloc] init];
-                        model.collectIndex = _allPhotoArray.count;
-                        model.asset = asset;
-                        if (!isAddImage) {//视频类型，获取截图和播放资源
-                            [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
-                                model.videoCaptureImage = result;
-                                PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
-                                options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
-                                [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
-                                    if ([_allPhotoArray containsObject:model]) return;
-
-                                    model.playItem = playerItem;
-                                    [_allPhotoArray addObject:model];
-                                    dispatch_async(dispatch_get_main_queue(), ^{
-                                        [self addSelectWithIndex:model.collectIndex];
-                                        completed(YES, nil);
-                                    });
-                                }];
-                            }];
-                        } else {
-                            [_allPhotoArray addObject:model];
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                [self addSelectWithIndex:model.collectIndex];
-                                completed(YES, nil);
-                            });
-                        }
-                    } else {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            completed(NO, @"添加到相册失败，请重新添加");
-                        });
-                    }
-                }];
             }
         } else {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -197,16 +171,17 @@
 
 - (PHImageRequestID)reqeustCollectionImageForIndexPath:(NSIndexPath *)indexPath resultHandler:(void (^)(UIImage * _Nullable, NSDictionary * _Nullable))resultHandler {
     WKPhotoAlbumModel *model = self.allPhotoArray[indexPath.row];
-
+    
     if (model.asset.mediaType == PHAssetMediaTypeVideo) {//视频
         if (model.playItem && model.videoCaptureImage) {
             resultHandler(model.videoCaptureImage, nil);
             return -1;
         }
-        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFill options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             model.videoCaptureImage = result;
             PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
             options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
+            options.networkAccessAllowed = YES;
             [self.cacheManager requestPlayerItemForVideo:model.asset options:options resultHandler:^(AVPlayerItem * _Nullable playerItem, NSDictionary * _Nullable info) {
                 model.playItem = playerItem;
                 dispatch_async(dispatch_get_main_queue(), ^{
@@ -219,7 +194,7 @@
             resultHandler(model.clipImage, nil);
             return -1;
         }
-        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+        return [self.cacheManager requestImageForAsset:model.asset targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFill options:self.reqeustImageOptions resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 resultHandler(result, info);
             });
@@ -320,8 +295,8 @@
         [removeAssets addObject:self.allPhotoArray[index.row].asset];
     }
     
-    [self.cacheManager startCachingImagesForAssets:addAssets targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions];
-    [self.cacheManager stopCachingImagesForAssets:removeAssets targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFit options:self.reqeustImageOptions];
+    [self.cacheManager startCachingImagesForAssets:addAssets targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFill options:self.reqeustImageOptions];
+    [self.cacheManager stopCachingImagesForAssets:removeAssets targetSize:self.reqeustImageSize contentMode:PHImageContentModeAspectFill options:self.reqeustImageOptions];
     
     _previousPreheatRect = preheatRect;
 }
@@ -393,7 +368,12 @@
             } else {
                 PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
                 options = [[PHImageRequestOptions alloc] init];
-                options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+                if (self.isUseOrigin) {
+                    options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+                } else {
+                    options.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
+                }
+                options.networkAccessAllowed = YES;
                 CGSize targetSize = PHImageManagerMaximumSize;
                 [[PHImageManager defaultManager] requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFill options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
                     dispatch_async(dispatch_get_main_queue(), ^{
@@ -409,6 +389,7 @@
             }
         } else {
             PHVideoRequestOptions *options = [[PHVideoRequestOptions alloc] init];
+            options.networkAccessAllowed = YES;
             if (self.isUseOrigin) {
                 options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
             } else {

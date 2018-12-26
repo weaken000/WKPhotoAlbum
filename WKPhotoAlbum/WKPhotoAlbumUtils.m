@@ -40,7 +40,10 @@
     
     PHFetchResult<PHAssetCollection *> *smartAlbums = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum subtype:PHAssetCollectionSubtypeSmartAlbumUserLibrary options:nil];
     for (PHAssetCollection *collection in smartAlbums) {
-        PHFetchResult *asset = [PHAsset fetchAssetsInAssetCollection:collection options:nil];
+        PHFetchOptions *fetchResoultOption = [[PHFetchOptions alloc] init];
+        fetchResoultOption.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:false]];
+        PHFetchResult *asset = [PHAsset fetchAssetsInAssetCollection:collection options:fetchResoultOption];
+        
         if (asset.count == 0 || !asset) continue;
         NSMutableArray *assetArr = [NSMutableArray array];
         WKPhotoAlbumConfig *config = [WKPhotoAlbumConfig sharedConfig];
