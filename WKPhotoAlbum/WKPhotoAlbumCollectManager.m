@@ -357,7 +357,10 @@
     [WKPhotoAlbumHUD showLoading];
     NSMutableArray *resultArr = [NSMutableArray arrayWithCapacity:self.selectIndexArray.count];
     __block NSInteger workCount = self.selectIndexArray.count;
+    __block BOOL hasError = NO;
     for (NSNumber *index in self.selectIndexArray) {
+        if (hasError) return;
+        
         WKPhotoAlbumModel *model = self.allPhotoArray[index.integerValue];
         if (model.asset.mediaType == PHAssetMediaTypeImage) {
             if (model.clipImage) {
@@ -378,14 +381,23 @@
                 options.networkAccessAllowed = YES;
                 CGSize targetSize = PHImageManagerMaximumSize;
                 [[PHImageManager defaultManager] requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFill options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+                    if (hasError) return;
+                    
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (result) {
                             [resultArr addObject:result];
-                        }
-                        workCount -= 1;
-                        if (workCount == 0) {
-                            selectImages(resultArr);
-                            [WKPhotoAlbumHUD dismiss];
+                            workCount -= 1;
+                            if (workCount == 0) {
+                                selectImages(resultArr);
+                                [WKPhotoAlbumHUD dismiss];
+                            }
+                        } else {
+                            hasError = YES;
+                            if (selectImages) {
+                                selectImages(@[]);
+                            }
+                            [resultArr removeAllObjects];
+                            [WKPhotoAlbumHUD showHUDText:@"读取图片资源失败"];
                         }
                     });
                 }];
@@ -399,17 +411,24 @@
                 options.deliveryMode = PHVideoRequestOptionsDeliveryModeMediumQualityFormat;
             }
             [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                if (hasError) return;
+                
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    if (asset) {
-                        NSURL *url = [asset valueForKey:@"URL"];
-                        if (url) {
-                            [resultArr addObject:url];
-                        }
+                    NSURL *url = [asset valueForKey:@"URL"];
+                    if (url) {
+                        [resultArr addObject:url];
                         workCount -= 1;
                         if (workCount == 0) {
                             selectImages(resultArr);
                             [WKPhotoAlbumHUD dismiss];
                         }
+                    } else {
+                        hasError = YES;
+                        if (selectImages) {
+                            selectImages(@[]);
+                        }
+                        [resultArr removeAllObjects];
+                        [WKPhotoAlbumHUD showHUDText:@"读取视频资源失败"];
                     }
                 });
             }];

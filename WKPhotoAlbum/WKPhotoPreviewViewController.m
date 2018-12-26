@@ -366,22 +366,13 @@ WKPhotoAlbumPreviewCellDelegate
         }
         case UIGestureRecognizerStateChanged: {
             CGPoint offset = [pan translationInView:self.view];
-            cell.imageView.center = CGPointMake(self.view.center.x + offset.x,
-                                                              self.view.center.y + offset.y);
-            CGFloat maxOffsetX = self.view.frame.size.width  * 0.40;
+            cell.imageView.center = CGPointMake(self.view.center.x + offset.x, self.view.center.y + offset.y);
             CGFloat maxOffsetY = self.view.frame.size.height * 0.40;
             CGFloat minScale   = 0.3;
-            if (fabs(offset.x) > fabs(offset.y)) {
-                CGFloat scale = 1 - (1 - minScale) / maxOffsetX * MIN(fabs(offset.x), maxOffsetX);
-                CGFloat alpha = 1 - MIN(1.0, fabs(offset.x) / maxOffsetX);
-                cell.imageView.transform = CGAffineTransformMakeScale(scale, scale);
-                self.previewCollectionView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:alpha];
-            } else {
-                CGFloat scale = 1 - (1 - minScale) / maxOffsetY * MIN(fabs(offset.y), maxOffsetY);
-                CGFloat alpha = 1 - MIN(1.0, fabs(offset.y) / maxOffsetY);
-                cell.imageView.transform = CGAffineTransformMakeScale(scale, scale);
-                self.previewCollectionView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:alpha];
-            }
+            CGFloat scale = 1 - (1 - minScale) / maxOffsetY * MIN(fabs(offset.y), maxOffsetY);
+            CGFloat alpha = 1 - MIN(1.0, fabs(offset.y) / maxOffsetY);
+            cell.imageView.transform = CGAffineTransformMakeScale(scale, scale);
+            self.previewCollectionView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:alpha];
         }
             break;
         case UIGestureRecognizerStateEnded:

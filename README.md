@@ -54,7 +54,7 @@ UIViewController *next = [WKPhotoAlbum presentAlbumVC];
  ### `cocoapods`
  
  ```sh
- pod "WKPhotoAlbum", '2.4.4'
+ pod "WKPhotoAlbum", '2.4.5'
  ```
  
  
