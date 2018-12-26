@@ -11,6 +11,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface WKPhotoAlbumHUD : UIView
+
++ (void)showLoading;
+
++ (void)showHUDText:(NSString *)text;
+
++ (void)dismiss;
+
+@end
+
 @interface WKPhotoAlbumUtils : NSObject
 
 + (PHImageRequestID)readImageByAsset:(PHAsset *)asset

@@ -354,6 +354,7 @@
 }
 
 - (void)requestSelectImage:(void (^)(NSArray * _Nullable))selectImages {
+    [WKPhotoAlbumHUD showLoading];
     NSMutableArray *resultArr = [NSMutableArray arrayWithCapacity:self.selectIndexArray.count];
     __block NSInteger workCount = self.selectIndexArray.count;
     for (NSNumber *index in self.selectIndexArray) {
@@ -364,6 +365,7 @@
                 workCount -= 1;
                 if (workCount == 0) {
                     selectImages(resultArr);
+                    [WKPhotoAlbumHUD dismiss];
                 }
             } else {
                 PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
@@ -383,6 +385,7 @@
                         workCount -= 1;
                         if (workCount == 0) {
                             selectImages(resultArr);
+                            [WKPhotoAlbumHUD dismiss];
                         }
                     });
                 }];
@@ -405,6 +408,7 @@
                         workCount -= 1;
                         if (workCount == 0) {
                             selectImages(resultArr);
+                            [WKPhotoAlbumHUD dismiss];
                         }
                     }
                 });

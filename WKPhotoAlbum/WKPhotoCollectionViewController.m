@@ -343,10 +343,14 @@ WKPhotoAlbumCameraViewControllerDelegate
 #pragma mark - WKPhotoAlbumCameraViewControllerDelegate
 - (void)captureView:(WKPhotoAlbumCameraViewController *)captureView didCreateResult:(id)result {
     __weak typeof(self) weakSelf = self;
+    [WKPhotoAlbumHUD showLoading];
     [self.manager addPhotoIntoCollection:result completed:^(BOOL success, NSString * _Nonnull errorMsg) {
         if (success) {
             [weakSelf.collectionView reloadData];
             [weakSelf.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
+            [WKPhotoAlbumHUD dismiss];
+        } else {
+            [WKPhotoAlbumHUD showHUDText:errorMsg];
         }
     }];
 }
