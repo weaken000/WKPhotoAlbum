@@ -379,6 +379,7 @@
                     options.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
                 }
                 options.networkAccessAllowed = YES;
+                options.synchronous = YES;
                 CGSize targetSize = PHImageManagerMaximumSize;
                 [[PHImageManager defaultManager] requestImageForAsset:model.asset targetSize:targetSize contentMode:PHImageContentModeAspectFill options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
                     if (hasError) return;
